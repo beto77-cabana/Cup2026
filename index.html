@@ -1117,7 +1117,7 @@ function createLeaderBadge(groupKey, groupData) {
     ptsCanvas.width = 256; ptsCanvas.height = 256;
     const ptsCtx = ptsCanvas.getContext('2d');
     ptsCtx.clearRect(0, 0, 256, 256);
-    ptsCtx.font = '400 100px Gadugi, sans-serif';
+    ptsCtx.font = '400 150px Gadugi, sans-serif';
     ptsCtx.textAlign = 'center';
     ptsCtx.textBaseline = 'middle';
     ptsCtx.strokeStyle = '#000';
@@ -1137,10 +1137,10 @@ function createLeaderBadge(groupKey, groupData) {
     pjCanvas.width = 256; pjCanvas.height = 256;
     const pjCtx = pjCanvas.getContext('2d');
     pjCtx.clearRect(0, 0, 256, 256);
-    pjCtx.font = '400 60px Gadugi, sans-serif';
+    pjCtx.font = '600 60px Gadugi, sans-serif';
     pjCtx.textAlign = 'center';
     pjCtx.textBaseline = 'middle';
-    pjCtx.fillStyle = '#cccccc';
+    pjCtx.fillStyle = '#ffffff';
     pjCtx.fillText(`PJ: ${leaderEq.stats.pj}`, 128, 128);
     const pjTex = new THREE.CanvasTexture(pjCanvas);
     pjTex.needsUpdate = true;
