@@ -91,6 +91,37 @@ canvas { display:block; }
 .ctrl-btn.active { background:rgba(255,215,0,0.3); border-color:#ffd700; }
 #btn-vista-general { margin-bottom:8px; font-weight:700; }
 
+/* BUSCADOR */
+#search-container {
+  position:relative; width:100%; margin-bottom:6px;
+}
+#search-input {
+  width:100%; padding:6px 10px; border-radius:6px;
+  background:rgba(20,20,50,0.9); border:1px solid rgba(255,215,0,0.3);
+  color:#ffd700; font-family:'Rajdhani',sans-serif; font-size:0.8rem;
+  outline:none; transition:border-color 0.2s;
+}
+#search-input::placeholder { color:rgba(255,215,0,0.4); }
+#search-input:focus { border-color:#ffd700; box-shadow:0 0 8px rgba(255,215,0,0.2); }
+#autocomplete-list {
+  position:absolute; top:100%; left:0; right:0;
+  background:rgba(10,10,30,0.95); border:1px solid rgba(255,215,0,0.3);
+  border-top:none; border-radius:0 0 6px 6px; max-height:200px;
+  overflow-y:auto; z-index:200; display:none;
+}
+.autocomplete-item {
+  padding:6px 10px; cursor:pointer; font-size:0.8rem;
+  color:#fff; display:flex; align-items:center; gap:8px;
+  transition:background 0.15s;
+}
+.autocomplete-item:hover, .autocomplete-item.active {
+  background:rgba(255,215,0,0.2); color:#ffd700;
+}
+.autocomplete-item img { width:24px; height:16px; border-radius:2px; }
+.autocomplete-item .ac-group {
+  font-size:0.65rem; color:#888; margin-left:auto;
+}
+
 /* LEGEND */
 #legend {
   position:absolute; bottom:15px; left:15px;
@@ -150,6 +181,11 @@ canvas { display:block; }
   #title-3d { font-size:0.85rem; text-align:center; }
   #status-badge { font-size:0.55rem; }
   #data-badge { font-size:0.6rem; }
+
+  #search-input { font-size:0.7rem; padding:5px 8px; }
+  #autocomplete-list { max-height:150px; }
+  .autocomplete-item { font-size:0.7rem; padding:5px 8px; }
+  .autocomplete-item img { width:20px; height:13px; }
 
   #controls {
     top:auto; bottom:10px; left:10px; right:10px;
@@ -232,6 +268,10 @@ canvas { display:block; }
   </div>
   <div id="controls">
     <button class="ctrl-btn" id="btn-vista-general" onclick="resetCamera()">🏠 Vista General</button>
+    <div id="search-container">
+      <input type="text" id="search-input" placeholder="🔍 Buscar equipo..." autocomplete="off">
+      <div id="autocomplete-list"></div>
+    </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="group-btns"></div>
     <button class="ctrl-btn" id="btn-lideres" onclick="toggleLideres()">⭐ Solo Líderes</button>
   </div>
@@ -513,34 +553,34 @@ const MUNDIAL_2026 = {
       lider:{ tipo:"unico", equipos:["Spain"] }
     },
     I: {
-      nombre: "Grupo I", jornadaActual: 2, totalJornadas: 3, partidosJugados: 4,
+      nombre: "Grupo I", jornadaActual: 3, totalJornadas: 3, partidosJugados: 6,
       equipos: [
-        { pais:"France", iso2:"fr", stats:{pj:2,g:2,e:0,p:0,gf:6,gc:1,dg:"+5",pts:6,pos:1},
+        { pais:"France", iso2:"fr", stats:{pj:3,g:3,e:0,p:0,gf:10,gc:2,dg:"+8",pts:9,pos:1},
           partidos:[
             {jornada:1,rival:"SEN",gf:3,gc:1,res:"V",fecha:"16/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"local"},
             {jornada:2,rival:"IRQ",gf:3,gc:0,res:"V",fecha:"22/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"local"},
-            {jornada:3,rival:"NOR",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"visitante",estado:"pendiente"}
+            {jornada:3,rival:"NOR",gf:4,gc:1,res:"V",fecha:"26/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"visitante"}
           ]},
-        { pais:"Norway", iso2:"no", stats:{pj:2,g:2,e:0,p:0,gf:7,gc:3,dg:"+4",pts:6,pos:2},
+        { pais:"Norway", iso2:"no", stats:{pj:3,g:2,e:0,p:1,gf:8,gc:7,dg:"+1",pts:6,pos:2},
           partidos:[
             {jornada:1,rival:"IRQ",gf:4,gc:1,res:"V",fecha:"16/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"visitante"},
             {jornada:2,rival:"SEN",gf:3,gc:2,res:"V",fecha:"22/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"local"},
-            {jornada:3,rival:"FRA",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"local",estado:"pendiente"}
+            {jornada:3,rival:"FRA",gf:1,gc:4,res:"D",fecha:"26/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"local"}
           ]},
-        { pais:"Senegal", iso2:"sn", stats:{pj:2,g:0,e:0,p:2,gf:3,gc:6,dg:"-3",pts:0,pos:3},
+        { pais:"Senegal", iso2:"sn", stats:{pj:3,g:1,e:0,p:2,gf:8,gc:6,dg:"+2",pts:3,pos:3},
           partidos:[
             {jornada:1,rival:"FRA",gf:1,gc:3,res:"D",fecha:"16/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"visitante"},
             {jornada:2,rival:"NOR",gf:2,gc:3,res:"D",fecha:"22/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"visitante"},
-            {jornada:3,rival:"IRQ",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"local",estado:"pendiente"}
+            {jornada:3,rival:"IRQ",gf:5,gc:0,res:"V",fecha:"26/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"local"}
           ]},
-        { pais:"Iraq", iso2:"iq", stats:{pj:2,g:0,e:0,p:2,gf:1,gc:7,dg:"-6",pts:0,pos:4},
+        { pais:"Iraq", iso2:"iq", stats:{pj:3,g:0,e:0,p:3,gf:1,gc:12,dg:"-11",pts:0,pos:4},
           partidos:[
             {jornada:1,rival:"NOR",gf:1,gc:4,res:"D",fecha:"16/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"local"},
             {jornada:2,rival:"FRA",gf:0,gc:3,res:"D",fecha:"22/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"visitante"},
-            {jornada:3,rival:"SEN",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"visitante",estado:"pendiente"}
+            {jornada:3,rival:"SEN",gf:0,gc:5,res:"D",fecha:"26/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"visitante"}
           ]}
       ],
-      lider:{ tipo:"empate", equipos:["France","Norway"] }
+      lider:{ tipo:"unico", equipos:["France"] }
     },
     J: {
       nombre: "Grupo J", jornadaActual: 2, totalJornadas: 3, partidosJugados: 4,
@@ -1372,6 +1412,93 @@ function setupUI() {
     btn.style.textAlign = 'center';
     btn.onclick = () => zoomToGroup(g);
     btnContainer.appendChild(btn);
+  });
+  
+  // ═══ BUSCADOR CON AUTOCOMPLETAR ═══
+  const allCountries = [];
+  Object.entries(MUNDIAL_2026.grupos).forEach(([gKey, gData]) => {
+    gData.equipos.forEach(eq => {
+      allCountries.push({
+        pais: eq.pais,
+        iso2: eq.iso2,
+        grupo: gKey,
+        paisUpper: eq.pais.toUpperCase()
+      });
+    });
+  });
+  
+  const searchInput = document.getElementById('search-input');
+  const acList = document.getElementById('autocomplete-list');
+  let acIndex = -1;
+  
+  function renderAutocomplete(matches) {
+    acList.innerHTML = '';
+    acIndex = -1;
+    if (matches.length === 0) {
+      acList.style.display = 'none';
+      return;
+    }
+    matches.forEach((m, i) => {
+      const item = document.createElement('div');
+      item.className = 'autocomplete-item';
+      item.innerHTML = `
+        <img src="https://flagcdn.com/w40/${m.iso2}.png" onerror="this.style.display='none'">
+        <span>${m.pais}</span>
+        <span class="ac-group">Grupo ${m.grupo}</span>
+      `;
+      item.onclick = () => selectCountry(m);
+      acList.appendChild(item);
+    });
+    acList.style.display = 'block';
+  }
+  
+  function selectCountry(country) {
+    searchInput.value = country.pais;
+    acList.style.display = 'none';
+    zoomToGroup(country.grupo);
+    searchInput.blur();
+  }
+  
+  searchInput.addEventListener('input', () => {
+    const val = searchInput.value.trim().toUpperCase();
+    if (val.length === 0) {
+      acList.style.display = 'none';
+      return;
+    }
+    const matches = allCountries.filter(c => c.paisUpper.includes(val));
+    renderAutocomplete(matches);
+  });
+  
+  searchInput.addEventListener('keydown', (e) => {
+    const items = acList.querySelectorAll('.autocomplete-item');
+    if (items.length === 0) return;
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      acIndex = Math.min(acIndex + 1, items.length - 1);
+      items.forEach((it, i) => it.classList.toggle('active', i === acIndex));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      acIndex = Math.max(acIndex - 1, 0);
+      items.forEach((it, i) => it.classList.toggle('active', i === acIndex));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (acIndex >= 0 && acIndex < items.length) {
+        items[acIndex].click();
+      } else if (items.length > 0) {
+        items[0].click();
+      }
+    } else if (e.key === 'Escape') {
+      acList.style.display = 'none';
+      searchInput.blur();
+    }
+  });
+  
+  // Cerrar autocomplete al hacer click fuera
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#search-container')) {
+      acList.style.display = 'none';
+    }
   });
 }
 
