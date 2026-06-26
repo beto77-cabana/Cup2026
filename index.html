@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FIFA World Cup 2026 - Visualización 3D Interactiva</title>
+<link rel="icon" type="image/png" href="favicon.png">
 
 <!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -228,7 +229,6 @@ canvas { display:block; }
   <div id="top-bar">
     <div id="title-3d">⚽ FIFA WORLD CUP 2026</div>
     <div id="status-badge">● FASE DE GRUPOS — EN CURSO</div>
-    <div id="data-badge">Datos: Wikipedia — 25/06/2026</div>
   </div>
   <div id="controls">
     <button class="ctrl-btn" id="btn-vista-general" onclick="resetCamera()">🏠 Vista General</button>
@@ -698,7 +698,7 @@ let groupMeshes = {}; // group letter -> {container, cardMesh, flagMeshes, leade
 let starField;
 let hoveredFlag = null;
 let hoveredGroupKey = null;
-let lideresOnly = false;
+let lideresOnly = true;
 let animationMixers = [];
 
 function initThreeJS() {
@@ -1088,11 +1088,22 @@ function createLeaderBadge(groupKey, groupData) {
     glowMesh.position.z = -0.1;
     leaderGroup.add(glowMesh);
     
-    // Star/crown sprite
-    const starSprite = createTextSprite('⭐', 48, '#ffd700');
-    starSprite.position.set(0, 1.0, 0.1);
-    starSprite.scale.set(0.6, 0.6, 1);
-    leaderGroup.add(starSprite);
+    // Country name above the flag (same size as points)
+    const cnCanvas = document.createElement('canvas');
+    cnCanvas.width = 512; cnCanvas.height = 128;
+    const cnCtx = cnCanvas.getContext('2d');
+    cnCtx.clearRect(0, 0, 512, 128);
+    cnCtx.font = '400 52px Gadugi, sans-serif';
+    cnCtx.textAlign = 'center';
+    cnCtx.textBaseline = 'middle';
+    cnCtx.fillStyle = '#ffd700';
+    cnCtx.fillText(leaderEq.pais.toUpperCase(), 256, 64);
+    const cnTex = new THREE.CanvasTexture(cnCanvas);
+    cnTex.needsUpdate = true;
+    const countryNameSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: cnTex, transparent: true }));
+    countryNameSprite.position.set(0, 1.1, 0.1);
+    countryNameSprite.scale.set(5.0, 1.2, 1);
+    leaderGroup.add(countryNameSprite);
     
     // "LÍDER" badge
     const badgeSprite = createTextSprite('LÍDER', 28, '#ffd700', 'rgba(0,0,0,0.6)');
@@ -1540,6 +1551,15 @@ async function main() {
   await new Promise(r => setTimeout(r, 800));
   
   hideLoading();
+  
+  // Activar "Solo Líderes" por defecto
+  document.getElementById('btn-lideres').classList.add('active');
+  Object.entries(groupMeshes).forEach(([key, g]) => {
+    g.flagMeshes.forEach(f => {
+      f.material.transparent = true;
+      f.material.opacity = 0.3;
+    });
+  });
   
   // Start animation
   animate();
