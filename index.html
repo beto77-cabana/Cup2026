@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIFA World Cup 2026 - Visualización 3D Interactiva</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<style>
+/* ═══════════════════════════════════════════════════
+   ESTILOS CSS - ESTÉTICA FUTURISTA / ESPACIAL
+   ═══════════════════════════════════════════════════ */
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#000; overflow:hidden; font-family:'Rajdhani',sans-serif; color:#fff; }
+canvas { display:block; }
+
+/* LOADING SCREEN */
+#loading-screen {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:radial-gradient(ellipse at center, #0a0a2e 0%, #000 70%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  z-index:9999; transition:opacity 1.5s;
+}
+#loading-screen.hidden { opacity:0; pointer-events:none; }
+#loading-screen h1 {
+  font-family:'Orbitron',sans-serif; font-size:2.5rem; color:#ffd700;
+  text-shadow:0 0 30px #ffd700,0 0 60px #ff8c00;
+  margin-bottom:10px; letter-spacing:4px;
+}
+#loading-screen h2 {
+  font-family:'Orbitron',sans-serif; font-size:1.2rem; color:#aaa;
+  margin-bottom:40px; letter-spacing:2px;
+}
+#loading-bar-container {
+  width:60%; max-width:500px; height:6px; background:#1a1a3e;
+  border-radius:3px; overflow:hidden; margin-bottom:20px;
+}
+#loading-bar {
+  width:0%; height:100%; background:linear-gradient(90deg,#ffd700,#ff8c00,#ffd700);
+  border-radius:3px; transition:width 0.3s;
+}
+#loading-text { font-size:1rem; color:#888; min-height:24px; }
+
+/* UI OVERLAY */
+#ui-overlay {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  pointer-events:none; z-index:100;
+}
+#ui-overlay > * { pointer-events:auto; }
+
+/* TOP BAR */
+#top-bar {
+  position:absolute; top:0; left:0; width:100%; padding:10px 20px;
+  display:flex; justify-content:space-between; align-items:center;
+  background:linear-gradient(180deg,rgba(0,0,0,0.8) 0%,transparent 100%);
+}
+#title-3d {
+  font-family:'Orbitron',sans-serif; font-size:1.1rem; color:#ffd700;
+  text-shadow:0 0 10px #ffd700;
+}
+#data-badge {
+  font-size:0.75rem; color:#888; background:rgba(255,255,255,0.05);
+  padding:4px 10px; border-radius:12px; border:1px solid rgba(255,255,255,0.1);
+}
+#status-badge {
+  font-family:'Orbitron',sans-serif; font-size:0.65rem; color:#0f0;
+  background:rgba(0,255,0,0.1); padding:4px 10px; border-radius:12px;
+  border:1px solid rgba(0,255,0,0.3); animation:pulse-green 2s infinite;
+}
+@keyframes pulse-green {
+  0%,100%{box-shadow:0 0 5px rgba(0,255,0,0.3)}50%{box-shadow:0 0 15px rgba(0,255,0,0.5)}
+}
+
+/* LEFT CONTROLS */
+#controls {
+  position:absolute; top:80px; left:15px; display:flex; flex-direction:column; gap:6px;
+}
+.ctrl-btn {
+  background:rgba(20,20,50,0.85); border:1px solid rgba(255,215,0,0.3);
+  color:#ffd700; font-family:'Rajdhani',sans-serif; font-size:0.8rem;
+  padding:6px 12px; border-radius:6px; cursor:pointer; transition:all 0.2s;
+  text-align:left;
+}
+.ctrl-btn:hover { background:rgba(255,215,0,0.2); border-color:#ffd700; }
+.ctrl-btn.active { background:rgba(255,215,0,0.3); border-color:#ffd700; }
+#btn-vista-general { margin-bottom:8px; font-weight:700; }
+
+/* LEGEND */
+#legend {
+  position:absolute; bottom:15px; left:15px;
+  background:rgba(10,10,30,0.85); border:1px solid rgba(255,255,255,0.1);
+  border-radius:8px; padding:10px 14px; font-size:0.7rem;
+}
+#legend div { margin:3px 0; }
+
+/* HOVER PANEL */
+#hover-panel {
+  position:absolute; display:none;
+  background:rgba(10,10,40,0.95); border:1px solid rgba(255,215,0,0.4);
+  border-radius:10px; padding:14px 18px; min-width:280px; max-width:360px;
+  box-shadow:0 0 30px rgba(255,215,0,0.15);
+  font-size:0.8rem; line-height:1.5;
+  backdrop-filter:blur(10px);
+}
+#hover-panel .hp-header {
+  display:flex; align-items:center; gap:10px; margin-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;
+}
+#hover-panel .hp-header img { width:32px; height:21px; border-radius:2px; }
+#hover-panel .hp-header .hp-country {
+  font-family:'Orbitron',sans-serif; font-size:0.9rem; color:#ffd700;
+}
+#hover-panel .hp-header .hp-group { font-size:0.7rem; color:#888; }
+#hover-panel .hp-stats { margin:8px 0; }
+#hover-panel .hp-stats table { width:100%; border-collapse:collapse; }
+#hover-panel .hp-stats td { padding:2px 6px; font-size:0.75rem; }
+#hover-panel .hp-stats .stat-label { color:#888; }
+#hover-panel .hp-stats .stat-value { color:#fff; font-weight:600; text-align:right; }
+#hover-panel .hp-matches { margin-top:8px; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px; }
+#hover-panel .hp-match {
+  display:flex; align-items:center; gap:6px; padding:3px 0;
+  font-size:0.72rem;
+}
+#hover-panel .hp-match .result-v { color:#4caf50; font-weight:700; }
+#hover-panel .hp-match .result-e { color:#ffc107; font-weight:700; }
+#hover-panel .hp-match .result-d { color:#f44336; font-weight:700; }
+#hover-panel .hp-match .match-detail { color:#aaa; font-size:0.65rem; }
+#hover-panel .hp-pending { color:#888; font-style:italic; padding:6px 0; }
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE - MÓVIL Y TABLET
+   ═══════════════════════════════════════════════════ */
+
+/* Tablet (768px y menos) */
+@media (max-width: 768px) {
+  #loading-screen h1 { font-size:1.6rem; letter-spacing:2px; }
+  #loading-screen h2 { font-size:0.9rem; }
+  #loading-bar-container { width:80%; }
+
+  #top-bar {
+    flex-direction:column; gap:8px; padding:8px 10px;
+    align-items:center;
+  }
+  #title-3d { font-size:0.85rem; text-align:center; }
+  #status-badge { font-size:0.55rem; }
+  #data-badge { font-size:0.6rem; }
+
+  #controls {
+    top:auto; bottom:10px; left:10px; right:10px;
+    flex-direction:row; flex-wrap:wrap; gap:4px;
+    justify-content:center;
+    background:rgba(0,0,0,0.7); border-radius:8px;
+    padding:6px;
+  }
+  #btn-vista-general { margin-bottom:0; font-size:0.7rem; padding:5px 10px; }
+  #controls .ctrl-btn { font-size:0.65rem; padding:4px 8px; }
+  #group-btns { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; }
+  #group-btns .ctrl-btn { padding:4px 7px; font-size:0.7rem; min-width:28px; text-align:center; }
+
+  #legend {
+    display:none;
+  }
+
+  #hover-panel {
+    min-width:auto; max-width:calc(100vw - 20px);
+    font-size:0.7rem; padding:10px 12px;
+    left:10px !important; right:10px;
+    top:auto !important; bottom:80px !important;
+  }
+  #hover-panel .hp-header .hp-country { font-size:0.8rem; }
+  #hover-panel .hp-stats td { font-size:0.65rem; padding:1px 4px; }
+  #hover-panel .hp-match { font-size:0.65rem; }
+  #hover-panel .hp-match .match-detail { font-size:0.55rem; }
+}
+
+/* Móvil pequeño (480px y menos) */
+@media (max-width: 480px) {
+  #loading-screen h1 { font-size:1.2rem; letter-spacing:1px; }
+  #loading-screen h2 { font-size:0.75rem; margin-bottom:25px; }
+  #loading-bar-container { width:85%; }
+
+  #top-bar { padding:6px 8px; gap:5px; }
+  #title-3d { font-size:0.7rem; }
+  #status-badge { font-size:0.5rem; padding:3px 6px; }
+  #data-badge { font-size:0.5rem; padding:3px 6px; }
+
+  #controls { bottom:8px; left:5px; right:5px; padding:4px; gap:3px; }
+  #btn-vista-general { font-size:0.6rem; padding:4px 8px; }
+  #controls .ctrl-btn { font-size:0.6rem; padding:3px 6px; }
+  #group-btns .ctrl-btn { min-width:24px; font-size:0.6rem; padding:3px 5px; }
+
+  #hover-panel {
+    padding:8px 10px; bottom:70px !important;
+    max-height:50vh; overflow-y:auto;
+  }
+  #hover-panel .hp-header img { width:24px; height:16px; }
+  #hover-panel .hp-header .hp-country { font-size:0.7rem; }
+}
+
+/* Orientación landscape en móvil */
+@media (max-height: 500px) and (orientation: landscape) {
+  #controls {
+    top:5px; bottom:auto; left:5px; right:5px;
+    flex-direction:row; flex-wrap:nowrap;
+    overflow-x:auto;
+  }
+  #hover-panel { max-height:70vh; bottom:50px !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <h1>⚽ FIFA WORLD CUP 2026</h1>
+  <h2>CANADA · MEXICO · USA</h2>
+  <div id="loading-bar-container"><div id="loading-bar"></div></div>
+  <div id="loading-text">Iniciando...</div>
+</div>
+
+<!-- UI OVERLAY -->
+<div id="ui-overlay" style="display:none;">
+  <div id="top-bar">
+    <div id="title-3d">⚽ FIFA WORLD CUP 2026</div>
+    <div id="status-badge">● FASE DE GRUPOS — EN CURSO</div>
+    <div id="data-badge">Datos: Wikipedia — 25/06/2026</div>
+  </div>
+  <div id="controls">
+    <button class="ctrl-btn" id="btn-vista-general" onclick="resetCamera()">🏠 Vista General</button>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="group-btns"></div>
+    <button class="ctrl-btn" id="btn-lideres" onclick="toggleLideres()">⭐ Solo Líderes</button>
+  </div>
+  <div id="legend">
+    <div>🟡 <span style="color:#ffd700">Glow dorado</span> = Líder único del grupo</div>
+    <div>🔵 <span style="color:#64b5f6">Glow azul</span> = Empate en primer lugar</div>
+    <div>⚪ <span style="color:#888">Sin glow</span> = Grupo sin líder claro / Por jugar</div>
+  </div>
+  <div id="hover-panel">
+    <div class="hp-header">
+      <img id="hp-flag" src="" alt="">
+      <div>
+        <div class="hp-country" id="hp-country"></div>
+        <div class="hp-group" id="hp-group"></div>
+      </div>
+    </div>
+    <div class="hp-stats" id="hp-stats"></div>
+    <div class="hp-matches" id="hp-matches"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// SECCIÓN 0: DATOS REALES EXTRAÍDOS
+// Fuente: Wikipedia API (en.wikipedia.org/w/api.php)
+// Grupos A, B, C: completos (3 jornadas)
+// Grupos D-L: jornada 2 completa, jornada 3 pendiente (25-27 jun 2026)
+// Fecha de extracción: 25/06/2026
+// ═══════════════════════════════════════════════════════════
+
+const MUNDIAL_2026 = {
+  torneoInfo: {
+    nombre: "FIFA World Cup 2026",
+    sedes: ["Canada", "Mexico", "Estados Unidos"],
+    inicio: "2026-06-11",
+    final: "2026-07-19",
+    fuenteDatos: "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_*",
+    fechaActualizacion: "2026-06-25"
+  },
+  grupos: {
+    A: {
+      nombre: "Grupo A", jornadaActual: 3, totalJornadas: 3, partidosJugados: 6,
+      equipos: [
+        { pais:"Mexico", iso2:"mx", stats:{pj:3,g:3,e:0,p:0,gf:6,gc:0,dg:"+6",pts:9,pos:1},
+          partidos:[
+            {jornada:1,rival:"RSA",gf:2,gc:0,res:"V",fecha:"11/06/2026",ciudad:"Mexico City",estadio:"Estadio Azteca",cond:"local"},
+            {jornada:2,rival:"KOR",gf:1,gc:0,res:"V",fecha:"18/06/2026",ciudad:"Zapopan",estadio:"Estadio Akron",cond:"local"},
+            {jornada:3,rival:"CZE",gf:3,gc:0,res:"V",fecha:"24/06/2026",ciudad:"Mexico City",estadio:"Estadio Azteca",cond:"visitante"}
+          ]},
+        { pais:"South Africa", iso2:"za", stats:{pj:3,g:1,e:1,p:1,gf:2,gc:3,dg:"-1",pts:4,pos:2},
+          partidos:[
+            {jornada:1,rival:"MEX",gf:0,gc:2,res:"D",fecha:"11/06/2026",ciudad:"Mexico City",estadio:"Estadio Azteca",cond:"visitante"},
+            {jornada:2,rival:"CZE",gf:1,gc:1,res:"E",fecha:"18/06/2026",ciudad:"Atlanta",estadio:"Mercedes-Benz Stadium",cond:"visitante"},
+            {jornada:3,rival:"KOR",gf:1,gc:0,res:"V",fecha:"24/06/2026",ciudad:"Guadalupe",estadio:"Estadio BBVA",cond:"local"}
+          ]},
+        { pais:"South Korea", iso2:"kr", stats:{pj:3,g:1,e:0,p:2,gf:2,gc:3,dg:"-1",pts:3,pos:3},
+          partidos:[
+            {jornada:1,rival:"CZE",gf:2,gc:1,res:"V",fecha:"11/06/2026",ciudad:"Zapopan",estadio:"Estadio Akron",cond:"local"},
+            {jornada:2,rival:"MEX",gf:0,gc:1,res:"D",fecha:"18/06/2026",ciudad:"Zapopan",estadio:"Estadio Akron",cond:"visitante"},
+            {jornada:3,rival:"RSA",gf:0,gc:1,res:"D",fecha:"24/06/2026",ciudad:"Guadalupe",estadio:"Estadio BBVA",cond:"visitante"}
+          ]},
+        { pais:"Czech Republic", iso2:"cz", stats:{pj:3,g:0,e:1,p:2,gf:2,gc:6,dg:"-4",pts:1,pos:4},
+          partidos:[
+            {jornada:1,rival:"KOR",gf:1,gc:2,res:"D",fecha:"11/06/2026",ciudad:"Zapopan",estadio:"Estadio Akron",cond:"visitante"},
+            {jornada:2,rival:"RSA",gf:1,gc:1,res:"E",fecha:"18/06/2026",ciudad:"Atlanta",estadio:"Mercedes-Benz Stadium",cond:"local"},
+            {jornada:3,rival:"MEX",gf:0,gc:3,res:"D",fecha:"24/06/2026",ciudad:"Mexico City",estadio:"Estadio Azteca",cond:"local"}
+          ]}
+      ],
+      lider:{ tipo:"unico", equipos:["Mexico"] }
+    },
+    B: {
+      nombre: "Grupo B", jornadaActual: 3, totalJornadas: 3, partidosJugados: 6,
+      equipos: [
+        { pais:"Switzerland", iso2:"ch", stats:{pj:3,g:2,e:1,p:0,gf:7,gc:3,dg:"+4",pts:7,pos:1},
+          partidos:[
+            {jornada:1,rival:"QAT",gf:1,gc:1,res:"E",fecha:"13/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"visitante"},
+            {jornada:2,rival:"BIH",gf:4,gc:1,res:"V",fecha:"18/06/2026",ciudad:"Inglewood",estadio:"SoFi Stadium",cond:"local"},
+            {jornada:3,rival:"CAN",gf:2,gc:1,res:"V",fecha:"24/06/2026",ciudad:"Vancouver",estadio:"BC Place",cond:"local"}
+          ]},
+        { pais:"Canada", iso2:"ca", stats:{pj:3,g:1,e:1,p:1,gf:8,gc:3,dg:"+5",pts:4,pos:2},
+          partidos:[
+            {jornada:1,rival:"BIH",gf:1,gc:1,res:"E",fecha:"12/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"local"},
+            {jornada:2,rival:"QAT",gf:6,gc:0,res:"V",fecha:"18/06/2026",ciudad:"Vancouver",estadio:"BC Place",cond:"local"},
+            {jornada:3,rival:"SUI",gf:1,gc:2,res:"D",fecha:"24/06/2026",ciudad:"Vancouver",estadio:"BC Place",cond:"visitante"}
+          ]},
+        { pais:"Bosnia and Herzegovina", iso2:"ba", stats:{pj:3,g:1,e:1,p:1,gf:5,gc:6,dg:"-1",pts:4,pos:3},
+          partidos:[
+            {jornada:1,rival:"CAN",gf:1,gc:1,res:"E",fecha:"12/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"visitante"},
+            {jornada:2,rival:"SUI",gf:1,gc:4,res:"D",fecha:"18/06/2026",ciudad:"Inglewood",estadio:"SoFi Stadium",cond:"visitante"},
+            {jornada:3,rival:"QAT",gf:3,gc:1,res:"V",fecha:"24/06/2026",ciudad:"Seattle",estadio:"Lumen Field",cond:"local"}
+          ]},
+        { pais:"Qatar", iso2:"qa", stats:{pj:3,g:0,e:1,p:2,gf:2,gc:10,dg:"-8",pts:1,pos:4},
+          partidos:[
+            {jornada:1,rival:"SUI",gf:1,gc:1,res:"E",fecha:"13/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"local"},
+            {jornada:2,rival:"CAN",gf:0,gc:6,res:"D",fecha:"18/06/2026",ciudad:"Vancouver",estadio:"BC Place",cond:"visitante"},
+            {jornada:3,rival:"BIH",gf:1,gc:3,res:"D",fecha:"24/06/2026",ciudad:"Seattle",estadio:"Lumen Field",cond:"visitante"}
+          ]}
+      ],
+      lider:{ tipo:"unico", equipos:["Switzerland"] }
+    },
+    C: {
+      nombre: "Grupo C", jornadaActual: 3, totalJornadas: 3, partidosJugados: 6,
+      equipos: [
+        { pais:"Brazil", iso2:"br", stats:{pj:3,g:2,e:1,p:0,gf:7,gc:1,dg:"+6",pts:7,pos:1},
+          partidos:[
+            {jornada:1,rival:"MAR",gf:1,gc:1,res:"E",fecha:"13/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"local"},
+            {jornada:2,rival:"HAI",gf:3,gc:0,res:"V",fecha:"19/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"local"},
+            {jornada:3,rival:"SCO",gf:3,gc:0,res:"V",fecha:"24/06/2026",ciudad:"Miami Gardens",estadio:"Hard Rock Stadium",cond:"visitante"}
+          ]},
+        { pais:"Morocco", iso2:"ma", stats:{pj:3,g:2,e:1,p:0,gf:6,gc:3,dg:"+3",pts:7,pos:2},
+          partidos:[
+            {jornada:1,rival:"BRA",gf:1,gc:1,res:"E",fecha:"13/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"visitante"},
+            {jornada:2,rival:"SCO",gf:1,gc:0,res:"V",fecha:"19/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"visitante"},
+            {jornada:3,rival:"HAI",gf:4,gc:2,res:"V",fecha:"24/06/2026",ciudad:"Atlanta",estadio:"Mercedes-Benz Stadium",cond:"local"}
+          ]},
+        { pais:"Scotland", iso2:"gb-sct", stats:{pj:3,g:1,e:0,p:2,gf:1,gc:4,dg:"-3",pts:3,pos:3},
+          partidos:[
+            {jornada:1,rival:"HAI",gf:1,gc:0,res:"V",fecha:"13/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"visitante"},
+            {jornada:2,rival:"MAR",gf:0,gc:1,res:"D",fecha:"19/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"local"},
+            {jornada:3,rival:"BRA",gf:0,gc:3,res:"D",fecha:"24/06/2026",ciudad:"Miami Gardens",estadio:"Hard Rock Stadium",cond:"local"}
+          ]},
+        { pais:"Haiti", iso2:"ht", stats:{pj:3,g:0,e:0,p:3,gf:2,gc:8,dg:"-6",pts:0,pos:4},
+          partidos:[
+            {jornada:1,rival:"SCO",gf:0,gc:1,res:"D",fecha:"13/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"local"},
+            {jornada:2,rival:"BRA",gf:0,gc:3,res:"D",fecha:"19/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"visitante"},
+            {jornada:3,rival:"MAR",gf:2,gc:4,res:"D",fecha:"24/06/2026",ciudad:"Atlanta",estadio:"Mercedes-Benz Stadium",cond:"visitante"}
+          ]}
+      ],
+      lider:{ tipo:"unico", equipos:["Brazil"] }
+    },
+    D: {
+      nombre: "Grupo D", jornadaActual: 3, totalJornadas: 3, partidosJugados: 6,
+      equipos: [
+        { pais:"United States", iso2:"us", stats:{pj:3,g:2,e:0,p:1,gf:8,gc:4,dg:"+4",pts:6,pos:1},
+          partidos:[
+            {jornada:1,rival:"PAR",gf:4,gc:1,res:"V",fecha:"12/06/2026",ciudad:"Inglewood",estadio:"SoFi Stadium",cond:"local"},
+            {jornada:2,rival:"AUS",gf:2,gc:0,res:"V",fecha:"19/06/2026",ciudad:"Seattle",estadio:"Lumen Field",cond:"local"},
+            {jornada:3,rival:"TUR",gf:2,gc:3,res:"D",fecha:"25/06/2026",ciudad:"Inglewood",estadio:"SoFi Stadium",cond:"visitante"}
+          ]},
+        { pais:"Australia", iso2:"au", stats:{pj:3,g:1,e:2,p:0,gf:2,gc:2,dg:"0",pts:5,pos:2},
+          partidos:[
+            {jornada:1,rival:"TUR",gf:2,gc:0,res:"V",fecha:"13/06/2026",ciudad:"Vancouver",estadio:"BC Place",cond:"local"},
+            {jornada:2,rival:"USA",gf:0,gc:2,res:"D",fecha:"19/06/2026",ciudad:"Seattle",estadio:"Lumen Field",cond:"visitante"},
+            {jornada:3,rival:"PAR",gf:0,gc:0,res:"E",fecha:"25/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"visitante"}
+          ]},
+        { pais:"Paraguay", iso2:"py", stats:{pj:3,g:1,e:1,p:1,gf:2,gc:4,dg:"-2",pts:4,pos:3},
+          partidos:[
+            {jornada:1,rival:"USA",gf:1,gc:4,res:"D",fecha:"12/06/2026",ciudad:"Inglewood",estadio:"SoFi Stadium",cond:"visitante"},
+            {jornada:2,rival:"TUR",gf:1,gc:0,res:"V",fecha:"19/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"visitante"},
+            {jornada:3,rival:"AUS",gf:0,gc:0,res:"E",fecha:"25/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"local"}
+          ]},
+        { pais:"Turkey", iso2:"tr", stats:{pj:3,g:1,e:0,p:2,gf:3,gc:4,dg:"-1",pts:3,pos:4},
+          partidos:[
+            {jornada:1,rival:"AUS",gf:0,gc:2,res:"D",fecha:"13/06/2026",ciudad:"Vancouver",estadio:"BC Place",cond:"visitante"},
+            {jornada:2,rival:"PAR",gf:0,gc:1,res:"D",fecha:"19/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"local"},
+            {jornada:3,rival:"USA",gf:3,gc:2,res:"V",fecha:"25/06/2026",ciudad:"Inglewood",estadio:"SoFi Stadium",cond:"local"}
+          ]}
+      ],
+      lider:{ tipo:"unico", equipos:["United States"] }
+    },
+    E: {
+      nombre: "Grupo E", jornadaActual: 3, totalJornadas: 3, partidosJugados: 6,
+      equipos: [
+        { pais:"Germany", iso2:"de", stats:{pj:3,g:2,e:0,p:1,gf:10,gc:4,dg:"+6",pts:6,pos:1},
+          partidos:[
+            {jornada:1,rival:"CUW",gf:7,gc:1,res:"V",fecha:"14/06/2026",ciudad:"Houston",estadio:"NRG Stadium",cond:"local"},
+            {jornada:2,rival:"CIV",gf:2,gc:1,res:"V",fecha:"20/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"local"},
+            {jornada:3,rival:"ECU",gf:1,gc:2,res:"D",fecha:"25/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"visitante"}
+          ]},
+        { pais:"Ivory Coast", iso2:"ci", stats:{pj:3,g:2,e:0,p:1,gf:4,gc:2,dg:"+2",pts:6,pos:2},
+          partidos:[
+            {jornada:1,rival:"ECU",gf:1,gc:0,res:"V",fecha:"14/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"local"},
+            {jornada:2,rival:"GER",gf:1,gc:2,res:"D",fecha:"20/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"visitante"},
+            {jornada:3,rival:"CUW",gf:2,gc:0,res:"V",fecha:"25/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"visitante"}
+          ]},
+        { pais:"Ecuador", iso2:"ec", stats:{pj:3,g:1,e:1,p:1,gf:2,gc:2,dg:"0",pts:4,pos:3},
+          partidos:[
+            {jornada:1,rival:"CIV",gf:0,gc:1,res:"D",fecha:"14/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"visitante"},
+            {jornada:2,rival:"CUW",gf:0,gc:0,res:"E",fecha:"20/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"local"},
+            {jornada:3,rival:"GER",gf:2,gc:1,res:"V",fecha:"25/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"local"}
+          ]},
+        { pais:"Curacao", iso2:"cw", stats:{pj:3,g:0,e:1,p:2,gf:1,gc:10,dg:"-9",pts:1,pos:4},
+          partidos:[
+            {jornada:1,rival:"GER",gf:1,gc:7,res:"D",fecha:"14/06/2026",ciudad:"Houston",estadio:"NRG Stadium",cond:"visitante"},
+            {jornada:2,rival:"ECU",gf:0,gc:0,res:"E",fecha:"20/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"visitante"},
+            {jornada:3,rival:"CIV",gf:0,gc:2,res:"D",fecha:"25/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"local"}
+          ]}
+      ],
+      lider:{ tipo:"unico", equipos:["Germany"] }
+    },
+    F: {
+      nombre: "Grupo F", jornadaActual: 3, totalJornadas: 3, partidosJugados: 6,
+      equipos: [
+        { pais:"Netherlands", iso2:"nl", stats:{pj:3,g:2,e:1,p:0,gf:10,gc:4,dg:"+6",pts:7,pos:1},
+          partidos:[
+            {jornada:1,rival:"JPN",gf:2,gc:2,res:"E",fecha:"14/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"local"},
+            {jornada:2,rival:"SWE",gf:5,gc:1,res:"V",fecha:"20/06/2026",ciudad:"Houston",estadio:"NRG Stadium",cond:"local"},
+            {jornada:3,rival:"TUN",gf:3,gc:1,res:"V",fecha:"25/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"visitante"}
+          ]},
+        { pais:"Japan", iso2:"jp", stats:{pj:3,g:1,e:2,p:0,gf:7,gc:3,dg:"+4",pts:5,pos:2},
+          partidos:[
+            {jornada:1,rival:"NED",gf:2,gc:2,res:"E",fecha:"14/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"visitante"},
+            {jornada:2,rival:"TUN",gf:4,gc:0,res:"V",fecha:"20/06/2026",ciudad:"Guadalupe",estadio:"Estadio BBVA",cond:"visitante"},
+            {jornada:3,rival:"SWE",gf:1,gc:1,res:"E",fecha:"25/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"local"}
+          ]},
+        { pais:"Sweden", iso2:"se", stats:{pj:3,g:1,e:1,p:1,gf:7,gc:7,dg:"0",pts:4,pos:3},
+          partidos:[
+            {jornada:1,rival:"TUN",gf:5,gc:1,res:"V",fecha:"14/06/2026",ciudad:"Guadalupe",estadio:"Estadio BBVA",cond:"local"},
+            {jornada:2,rival:"NED",gf:1,gc:5,res:"D",fecha:"20/06/2026",ciudad:"Houston",estadio:"NRG Stadium",cond:"visitante"},
+            {jornada:3,rival:"JPN",gf:1,gc:1,res:"E",fecha:"25/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"visitante"}
+          ]},
+        { pais:"Tunisia", iso2:"tn", stats:{pj:3,g:0,e:0,p:3,gf:2,gc:11,dg:"-9",pts:0,pos:4},
+          partidos:[
+            {jornada:1,rival:"SWE",gf:1,gc:5,res:"D",fecha:"14/06/2026",ciudad:"Guadalupe",estadio:"Estadio BBVA",cond:"visitante"},
+            {jornada:2,rival:"JPN",gf:0,gc:4,res:"D",fecha:"20/06/2026",ciudad:"Guadalupe",estadio:"Estadio BBVA",cond:"local"},
+            {jornada:3,rival:"NED",gf:1,gc:3,res:"D",fecha:"25/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"local"}
+          ]}
+      ],
+      lider:{ tipo:"unico", equipos:["Netherlands"] }
+    },
+    G: {
+      nombre: "Grupo G", jornadaActual: 2, totalJornadas: 3, partidosJugados: 4,
+      equipos: [
+        { pais:"Egypt", iso2:"eg", stats:{pj:2,g:1,e:1,p:0,gf:4,gc:2,dg:"+2",pts:4,pos:1},
+          partidos:[
+            {jornada:1,rival:"BEL",gf:1,gc:1,res:"E",fecha:"15/06/2026",ciudad:"Seattle",estadio:"Lumen Field",cond:"visitante"},
+            {jornada:2,rival:"NZL",gf:3,gc:1,res:"V",fecha:"21/06/2026",ciudad:"Vancouver",estadio:"BC Place",cond:"visitante"},
+            {jornada:3,rival:"IRN",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Seattle",estadio:"Lumen Field",cond:"local",estado:"pendiente"}
+          ]},
+        { pais:"Iran", iso2:"ir", stats:{pj:2,g:0,e:2,p:0,gf:2,gc:2,dg:"0",pts:2,pos:2},
+          partidos:[
+            {jornada:1,rival:"NZL",gf:2,gc:2,res:"E",fecha:"15/06/2026",ciudad:"Inglewood",estadio:"SoFi Stadium",cond:"local"},
+            {jornada:2,rival:"BEL",gf:0,gc:0,res:"E",fecha:"21/06/2026",ciudad:"Inglewood",estadio:"SoFi Stadium",cond:"visitante"},
+            {jornada:3,rival:"EGY",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Seattle",estadio:"Lumen Field",cond:"visitante",estado:"pendiente"}
+          ]},
+        { pais:"Belgium", iso2:"be", stats:{pj:2,g:0,e:2,p:0,gf:1,gc:1,dg:"0",pts:2,pos:3},
+          partidos:[
+            {jornada:1,rival:"EGY",gf:1,gc:1,res:"E",fecha:"15/06/2026",ciudad:"Seattle",estadio:"Lumen Field",cond:"local"},
+            {jornada:2,rival:"IRN",gf:0,gc:0,res:"E",fecha:"21/06/2026",ciudad:"Inglewood",estadio:"SoFi Stadium",cond:"local"},
+            {jornada:3,rival:"NZL",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Vancouver",estadio:"BC Place",cond:"visitante",estado:"pendiente"}
+          ]},
+        { pais:"New Zealand", iso2:"nz", stats:{pj:2,g:0,e:1,p:1,gf:3,gc:5,dg:"-2",pts:1,pos:4},
+          partidos:[
+            {jornada:1,rival:"IRN",gf:2,gc:2,res:"E",fecha:"15/06/2026",ciudad:"Inglewood",estadio:"SoFi Stadium",cond:"visitante"},
+            {jornada:2,rival:"EGY",gf:1,gc:3,res:"D",fecha:"21/06/2026",ciudad:"Vancouver",estadio:"BC Place",cond:"local"},
+            {jornada:3,rival:"BEL",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Vancouver",estadio:"BC Place",cond:"local",estado:"pendiente"}
+          ]}
+      ],
+      lider:{ tipo:"unico", equipos:["Egypt"] }
+    },
+    H: {
+      nombre: "Grupo H", jornadaActual: 2, totalJornadas: 3, partidosJugados: 4,
+      equipos: [
+        { pais:"Spain", iso2:"es", stats:{pj:2,g:1,e:1,p:0,gf:4,gc:0,dg:"+4",pts:4,pos:1},
+          partidos:[
+            {jornada:1,rival:"CPV",gf:0,gc:0,res:"E",fecha:"15/06/2026",ciudad:"Atlanta",estadio:"Mercedes-Benz Stadium",cond:"local"},
+            {jornada:2,rival:"KSA",gf:4,gc:0,res:"V",fecha:"21/06/2026",ciudad:"Atlanta",estadio:"Mercedes-Benz Stadium",cond:"local"},
+            {jornada:3,rival:"URU",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Zapopan",estadio:"Estadio Akron",cond:"visitante",estado:"pendiente"}
+          ]},
+        { pais:"Uruguay", iso2:"uy", stats:{pj:2,g:0,e:2,p:0,gf:3,gc:3,dg:"0",pts:2,pos:2},
+          partidos:[
+            {jornada:1,rival:"KSA",gf:1,gc:1,res:"E",fecha:"15/06/2026",ciudad:"Miami Gardens",estadio:"Hard Rock Stadium",cond:"visitante"},
+            {jornada:2,rival:"CPV",gf:2,gc:2,res:"E",fecha:"21/06/2026",ciudad:"Miami Gardens",estadio:"Hard Rock Stadium",cond:"local"},
+            {jornada:3,rival:"ESP",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Zapopan",estadio:"Estadio Akron",cond:"local",estado:"pendiente"}
+          ]},
+        { pais:"Cape Verde", iso2:"cv", stats:{pj:2,g:0,e:2,p:0,gf:2,gc:2,dg:"0",pts:2,pos:3},
+          partidos:[
+            {jornada:1,rival:"ESP",gf:0,gc:0,res:"E",fecha:"15/06/2026",ciudad:"Atlanta",estadio:"Mercedes-Benz Stadium",cond:"visitante"},
+            {jornada:2,rival:"URU",gf:2,gc:2,res:"E",fecha:"21/06/2026",ciudad:"Miami Gardens",estadio:"Hard Rock Stadium",cond:"visitante"},
+            {jornada:3,rival:"KSA",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Houston",estadio:"NRG Stadium",cond:"local",estado:"pendiente"}
+          ]},
+        { pais:"Saudi Arabia", iso2:"sa", stats:{pj:2,g:0,e:1,p:1,gf:1,gc:5,dg:"-4",pts:1,pos:4},
+          partidos:[
+            {jornada:1,rival:"URU",gf:1,gc:1,res:"E",fecha:"15/06/2026",ciudad:"Miami Gardens",estadio:"Hard Rock Stadium",cond:"local"},
+            {jornada:2,rival:"ESP",gf:0,gc:4,res:"D",fecha:"21/06/2026",ciudad:"Atlanta",estadio:"Mercedes-Benz Stadium",cond:"visitante"},
+            {jornada:3,rival:"CPV",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Houston",estadio:"NRG Stadium",cond:"visitante",estado:"pendiente"}
+          ]}
+      ],
+      lider:{ tipo:"unico", equipos:["Spain"] }
+    },
+    I: {
+      nombre: "Grupo I", jornadaActual: 2, totalJornadas: 3, partidosJugados: 4,
+      equipos: [
+        { pais:"France", iso2:"fr", stats:{pj:2,g:2,e:0,p:0,gf:6,gc:1,dg:"+5",pts:6,pos:1},
+          partidos:[
+            {jornada:1,rival:"SEN",gf:3,gc:1,res:"V",fecha:"16/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"local"},
+            {jornada:2,rival:"IRQ",gf:3,gc:0,res:"V",fecha:"22/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"local"},
+            {jornada:3,rival:"NOR",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"visitante",estado:"pendiente"}
+          ]},
+        { pais:"Norway", iso2:"no", stats:{pj:2,g:2,e:0,p:0,gf:7,gc:3,dg:"+4",pts:6,pos:2},
+          partidos:[
+            {jornada:1,rival:"IRQ",gf:4,gc:1,res:"V",fecha:"16/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"visitante"},
+            {jornada:2,rival:"SEN",gf:3,gc:2,res:"V",fecha:"22/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"local"},
+            {jornada:3,rival:"FRA",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"local",estado:"pendiente"}
+          ]},
+        { pais:"Senegal", iso2:"sn", stats:{pj:2,g:0,e:0,p:2,gf:3,gc:6,dg:"-3",pts:0,pos:3},
+          partidos:[
+            {jornada:1,rival:"FRA",gf:1,gc:3,res:"D",fecha:"16/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"visitante"},
+            {jornada:2,rival:"NOR",gf:2,gc:3,res:"D",fecha:"22/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"visitante"},
+            {jornada:3,rival:"IRQ",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"local",estado:"pendiente"}
+          ]},
+        { pais:"Iraq", iso2:"iq", stats:{pj:2,g:0,e:0,p:2,gf:1,gc:7,dg:"-6",pts:0,pos:4},
+          partidos:[
+            {jornada:1,rival:"NOR",gf:1,gc:4,res:"D",fecha:"16/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"local"},
+            {jornada:2,rival:"FRA",gf:0,gc:3,res:"D",fecha:"22/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"visitante"},
+            {jornada:3,rival:"SEN",gf:null,gc:null,res:null,fecha:"26/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"visitante",estado:"pendiente"}
+          ]}
+      ],
+      lider:{ tipo:"empate", equipos:["France","Norway"] }
+    },
+    J: {
+      nombre: "Grupo J", jornadaActual: 2, totalJornadas: 3, partidosJugados: 4,
+      equipos: [
+        { pais:"Argentina", iso2:"ar", stats:{pj:2,g:2,e:0,p:0,gf:5,gc:0,dg:"+5",pts:6,pos:1},
+          partidos:[
+            {jornada:1,rival:"ALG",gf:3,gc:0,res:"V",fecha:"16/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"local"},
+            {jornada:2,rival:"AUT",gf:2,gc:0,res:"V",fecha:"22/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"local"},
+            {jornada:3,rival:"JOR",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"visitante",estado:"pendiente"}
+          ]},
+        { pais:"Austria", iso2:"at", stats:{pj:2,g:1,e:0,p:1,gf:3,gc:3,dg:"0",pts:3,pos:2},
+          partidos:[
+            {jornada:1,rival:"JOR",gf:3,gc:1,res:"V",fecha:"16/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"local"},
+            {jornada:2,rival:"ARG",gf:0,gc:2,res:"D",fecha:"22/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"visitante"},
+            {jornada:3,rival:"ALG",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"visitante",estado:"pendiente"}
+          ]},
+        { pais:"Algeria", iso2:"dz", stats:{pj:2,g:1,e:0,p:1,gf:2,gc:4,dg:"-2",pts:3,pos:3},
+          partidos:[
+            {jornada:1,rival:"ARG",gf:0,gc:3,res:"D",fecha:"16/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"visitante"},
+            {jornada:2,rival:"JOR",gf:2,gc:1,res:"V",fecha:"22/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"visitante"},
+            {jornada:3,rival:"AUT",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"local",estado:"pendiente"}
+          ]},
+        { pais:"Jordan", iso2:"jo", stats:{pj:2,g:0,e:0,p:2,gf:2,gc:5,dg:"-3",pts:0,pos:4},
+          partidos:[
+            {jornada:1,rival:"AUT",gf:1,gc:3,res:"D",fecha:"16/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"visitante"},
+            {jornada:2,rival:"ALG",gf:1,gc:2,res:"D",fecha:"22/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"local"},
+            {jornada:3,rival:"ARG",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"local",estado:"pendiente"}
+          ]}
+      ],
+      lider:{ tipo:"unico", equipos:["Argentina"] }
+    },
+    K: {
+      nombre: "Grupo K", jornadaActual: 2, totalJornadas: 3, partidosJugados: 4,
+      equipos: [
+        { pais:"Colombia", iso2:"co", stats:{pj:2,g:2,e:0,p:0,gf:4,gc:1,dg:"+3",pts:6,pos:1},
+          partidos:[
+            {jornada:1,rival:"UZB",gf:3,gc:1,res:"V",fecha:"17/06/2026",ciudad:"Mexico City",estadio:"Estadio Azteca",cond:"visitante"},
+            {jornada:2,rival:"COD",gf:1,gc:0,res:"V",fecha:"23/06/2026",ciudad:"Zapopan",estadio:"Estadio Akron",cond:"local"},
+            {jornada:3,rival:"POR",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Miami Gardens",estadio:"Hard Rock Stadium",cond:"local",estado:"pendiente"}
+          ]},
+        { pais:"Portugal", iso2:"pt", stats:{pj:2,g:1,e:1,p:0,gf:6,gc:1,dg:"+5",pts:4,pos:2},
+          partidos:[
+            {jornada:1,rival:"COD",gf:1,gc:1,res:"E",fecha:"17/06/2026",ciudad:"Houston",estadio:"NRG Stadium",cond:"local"},
+            {jornada:2,rival:"UZB",gf:5,gc:0,res:"V",fecha:"23/06/2026",ciudad:"Houston",estadio:"NRG Stadium",cond:"local"},
+            {jornada:3,rival:"COL",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Miami Gardens",estadio:"Hard Rock Stadium",cond:"visitante",estado:"pendiente"}
+          ]},
+        { pais:"DR Congo", iso2:"cd", stats:{pj:2,g:0,e:1,p:1,gf:1,gc:2,dg:"-1",pts:1,pos:3},
+          partidos:[
+            {jornada:1,rival:"POR",gf:1,gc:1,res:"E",fecha:"17/06/2026",ciudad:"Houston",estadio:"NRG Stadium",cond:"visitante"},
+            {jornada:2,rival:"COL",gf:0,gc:1,res:"D",fecha:"23/06/2026",ciudad:"Zapopan",estadio:"Estadio Akron",cond:"visitante"},
+            {jornada:3,rival:"UZB",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Atlanta",estadio:"Mercedes-Benz Stadium",cond:"local",estado:"pendiente"}
+          ]},
+        { pais:"Uzbekistan", iso2:"uz", stats:{pj:2,g:0,e:0,p:2,gf:1,gc:8,dg:"-7",pts:0,pos:4},
+          partidos:[
+            {jornada:1,rival:"COL",gf:1,gc:3,res:"D",fecha:"17/06/2026",ciudad:"Mexico City",estadio:"Estadio Azteca",cond:"local"},
+            {jornada:2,rival:"POR",gf:0,gc:5,res:"D",fecha:"23/06/2026",ciudad:"Houston",estadio:"NRG Stadium",cond:"visitante"},
+            {jornada:3,rival:"COD",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Atlanta",estadio:"Mercedes-Benz Stadium",cond:"visitante",estado:"pendiente"}
+          ]}
+      ],
+      lider:{ tipo:"unico", equipos:["Colombia"] }
+    },
+    L: {
+      nombre: "Grupo L", jornadaActual: 2, totalJornadas: 3, partidosJugados: 4,
+      equipos: [
+        { pais:"England", iso2:"gb-eng", stats:{pj:2,g:1,e:1,p:0,gf:4,gc:2,dg:"+2",pts:4,pos:1},
+          partidos:[
+            {jornada:1,rival:"CRO",gf:4,gc:2,res:"V",fecha:"17/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"local"},
+            {jornada:2,rival:"GHA",gf:0,gc:0,res:"E",fecha:"23/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"local"},
+            {jornada:3,rival:"PAN",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"visitante",estado:"pendiente"}
+          ]},
+        { pais:"Ghana", iso2:"gh", stats:{pj:2,g:1,e:1,p:0,gf:1,gc:0,dg:"+1",pts:4,pos:2},
+          partidos:[
+            {jornada:1,rival:"PAN",gf:1,gc:0,res:"V",fecha:"17/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"local"},
+            {jornada:2,rival:"ENG",gf:0,gc:0,res:"E",fecha:"23/06/2026",ciudad:"Foxborough",estadio:"Gillette Stadium",cond:"visitante"},
+            {jornada:3,rival:"CRO",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"visitante",estado:"pendiente"}
+          ]},
+        { pais:"Croatia", iso2:"hr", stats:{pj:2,g:1,e:0,p:1,gf:3,gc:4,dg:"-1",pts:3,pos:3},
+          partidos:[
+            {jornada:1,rival:"ENG",gf:2,gc:4,res:"D",fecha:"17/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"visitante"},
+            {jornada:2,rival:"PAN",gf:1,gc:0,res:"V",fecha:"23/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"visitante"},
+            {jornada:3,rival:"GHA",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Philadelphia",estadio:"Lincoln Financial Field",cond:"local",estado:"pendiente"}
+          ]},
+        { pais:"Panama", iso2:"pa", stats:{pj:2,g:0,e:0,p:2,gf:0,gc:2,dg:"-2",pts:0,pos:4},
+          partidos:[
+            {jornada:1,rival:"GHA",gf:0,gc:1,res:"D",fecha:"17/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"visitante"},
+            {jornada:2,rival:"CRO",gf:0,gc:1,res:"D",fecha:"23/06/2026",ciudad:"Toronto",estadio:"BMO Field",cond:"local"},
+            {jornada:3,rival:"ENG",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"East Rutherford",estadio:"MetLife Stadium",cond:"local",estado:"pendiente"}
+          ]}
+      ],
+      lider:{ tipo:"empate", equipos:["England","Ghana"] }
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// SECCIÓN 1: CONFIGURACIÓN Y CONSTANTES
+// ═══════════════════════════════════════════════════════════
+
+const FLAG_BASE = "https://flagcdn.com/w160/";
+const GROUP_LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+
+// Fix Scotland/England/Bosnia ISO codes for flagcdn (they use GB subdivisions)
+const FLAG_OVERRIDES = {
+  'gb-sct': 'gb',    // Scotland -> use UK flag
+  'gb-eng': 'gb',    // England -> use UK flag
+  'ba': 'ba'          // Bosnia ok
+};
+
+function getFlagUrl(iso2) {
+  const code = FLAG_OVERRIDES[iso2] || iso2;
+  return FLAG_BASE + code + ".png";
+}
+
+// Country full names (for display)
+const COUNTRY_NAMES = {
+  MEX:'Mexico', RSA:'South Africa', KOR:'South Korea', CZE:'Czech Republic',
+  CAN:'Canada', BIH:'Bosnia Herz.', QAT:'Qatar', SUI:'Switzerland',
+  BRA:'Brazil', MAR:'Morocco', SCO:'Scotland', HAI:'Haiti',
+  USA:'United States', PAR:'Paraguay', AUS:'Australia', TUR:'Turkey',
+  GER:'Germany', CUW:'Curaçao', CIV:'Ivory Coast', ECU:'Ecuador',
+  NED:'Netherlands', JPN:'Japan', SWE:'Sweden', TUN:'Tunisia',
+  EGY:'Egypt', IRN:'Iran', BEL:'Belgium', NZL:'New Zealand',
+  ESP:'Spain', URU:'Uruguay', CPV:'Cape Verde', KSA:'Saudi Arabia',
+  FRA:'France', NOR:'Norway', SEN:'Senegal', IRQ:'Iraq',
+  ARG:'Argentina', AUT:'Austria', ALG:'Algeria', JOR:'Jordan',
+  COL:'Colombia', POR:'Portugal', COD:'DR Congo', UZB:'Uzbekistan',
+  ENG:'England', GHA:'Ghana', CRO:'Croatia', PAN:'Panama'
+};
+
+// ISO2 by 3-letter code for flags
+const ISO_BY_CODE = {};
+Object.entries(MUNDIAL_2026.grupos).forEach(([gKey, g]) => {
+  g.equipos.forEach(eq => {
+    const code3 = eq.partidos[0] ? (eq.partidos[0].cond === 'local' ? '' : '') : '';
+    // Build reverse lookup from country name
+  });
+});
+// Manual mapping from FIFA 3-letter to ISO2
+const FIFA3_TO_ISO2 = {
+  MEX:'mx',RSA:'za',KOR:'kr',CZE:'cz',CAN:'ca',BIH:'ba',QAT:'qa',SUI:'ch',
+  BRA:'br',MAR:'ma',SCO:'gb-sct',HAI:'ht',USA:'us',PAR:'py',AUS:'au',TUR:'tr',
+  GER:'de',CUW:'cw',CIV:'ci',ECU:'ec',NED:'nl',JPN:'jp',SWE:'se',TUN:'tn',
+  EGY:'eg',IRN:'ir',BEL:'be',NZL:'nz',ESP:'es',URU:'uy',CPV:'cv',KSA:'sa',
+  FRA:'fr',NOR:'no',SEN:'sn',IRQ:'iq',ARG:'ar',AUT:'at',ALG:'dz',JOR:'jo',
+  COL:'co',POR:'pt',COD:'cd',UZB:'uz',ENG:'gb-eng',GHA:'gh',CRO:'hr',PAN:'pa'
+};
+
+// ═══════════════════════════════════════════════════════════
+// SECCIÓN 2: SETUP THREE.JS
+// ═══════════════════════════════════════════════════════════
+
+let scene, camera, renderer, clock;
+let raycaster, mouse;
+let groupMeshes = {}; // group letter -> {container, cardMesh, flagMeshes, leaderMeshes}
+let starField;
+let hoveredFlag = null;
+let hoveredGroupKey = null;
+let lideresOnly = false;
+let animationMixers = [];
+
+function initThreeJS() {
+  scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x000011, 0.008);
+  
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  // Más alejado en pantallas pequeñas para ver toda la grilla
+  const isMobile = window.innerWidth <= 768;
+  const initialRadius = isMobile ? 50 : 30;
+  camera.position.set(0, 5, initialRadius);
+  camera.lookAt(0, 0, 0);
+  
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000011, 1);
+  renderer.shadowMap.enabled = true;
+  document.body.appendChild(renderer.domElement);
+  
+  clock = new THREE.Clock();
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2(-999, -999);
+  
+  // Lights
+  const ambientLight = new THREE.AmbientLight(0x334466, 0.6);
+  scene.add(ambientLight);
+  
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(10, 20, 15);
+  dirLight.castShadow = true;
+  scene.add(dirLight);
+  
+  const pointLight1 = new THREE.PointLight(0xffd700, 0.5, 50);
+  pointLight1.position.set(-15, 10, 10);
+  scene.add(pointLight1);
+  
+  const pointLight2 = new THREE.PointLight(0x4488ff, 0.3, 50);
+  pointLight2.position.set(15, 10, -10);
+  scene.add(pointLight2);
+  
+  // Stars
+  createStarField();
+  
+  // OrbitControls (inline implementation)
+  setupOrbitControls();
+  
+  // Events
+  window.addEventListener('resize', onWindowResize);
+  renderer.domElement.addEventListener('mousemove', onMouseMove);
+  renderer.domElement.addEventListener('click', onMouseClick);
+}
+
+// Inline OrbitControls (minimal)
+function setupOrbitControls() {
+  let isDragging = false;
+  let prevMouse = { x: 0, y: 0 };
+  let spherical = { theta: 0, phi: Math.PI / 3, radius: window.innerWidth <= 768 ? 50 : 30 };
+  let target = new THREE.Vector3(0, 0, 0);
+  
+  function updateCamera() {
+    camera.position.x = target.x + spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+    camera.position.y = target.y + spherical.radius * Math.cos(spherical.phi);
+    camera.position.z = target.z + spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+    camera.lookAt(target);
+  }
+  
+  renderer.domElement.addEventListener('mousedown', (e) => {
+    if (e.button === 0) { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; }
+  });
+  renderer.domElement.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - prevMouse.x;
+    const dy = e.clientY - prevMouse.y;
+    spherical.theta -= dx * 0.005;
+    spherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, spherical.phi - dy * 0.005));
+    prevMouse = { x: e.clientX, y: e.clientY };
+    updateCamera();
+  });
+  renderer.domElement.addEventListener('mouseup', () => { isDragging = false; });
+  renderer.domElement.addEventListener('mouseleave', () => { isDragging = false; });
+  renderer.domElement.addEventListener('wheel', (e) => {
+    spherical.radius = Math.max(10, Math.min(60, spherical.radius + e.deltaY * 0.03));
+    updateCamera();
+  });
+  
+  // Touch support
+  renderer.domElement.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  });
+  renderer.domElement.addEventListener('touchmove', (e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - prevMouse.x;
+    const dy = e.touches[0].clientY - prevMouse.y;
+    spherical.theta -= dx * 0.005;
+    spherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, spherical.phi - dy * 0.005));
+    prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    updateCamera();
+  });
+  renderer.domElement.addEventListener('touchend', () => { isDragging = false; });
+  
+  updateCamera();
+  
+  // Expose for camera animation
+  window._orbitControls = { spherical, target, updateCamera };
+}
+
+function createStarField() {
+  const geo = new THREE.BufferGeometry();
+  const count = 2000;
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count * 3; i += 3) {
+    positions[i] = (Math.random() - 0.5) * 200;
+    positions[i+1] = (Math.random() - 0.5) * 200;
+    positions[i+2] = (Math.random() - 0.5) * 200;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.15, transparent: true, opacity: 0.8 });
+  starField = new THREE.Points(geo, mat);
+  scene.add(starField);
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SECCIÓN 3: LOADING SCREEN
+// ═══════════════════════════════════════════════════════════
+
+const loadingMessages = [
+  "🌍 Obteniendo datos actualizados del Mundial 2026...",
+  "📊 Procesando grupos y posiciones...",
+  "🏳️ Cargando banderas de los 48 países...",
+  "🎮 Inicializando escena 3D...",
+  "✅ ¡Todo listo! FIFA World Cup 2026"
+];
+
+function updateLoading(percent, msg) {
+  const bar = document.getElementById('loading-bar');
+  const text = document.getElementById('loading-text');
+  if (bar) bar.style.width = percent + '%';
+  if (text) text.textContent = msg;
+}
+
+function hideLoading() {
+  const screen = document.getElementById('loading-screen');
+  screen.classList.add('hidden');
+  setTimeout(() => { screen.style.display = 'none'; }, 1500);
+  document.getElementById('ui-overlay').style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════════════════
+// SECCIÓN 4: CREACIÓN DE GRUPOS 3D
+// ═══════════════════════════════════════════════════════════
+
+// Grid layout: 4 cols x 3 rows
+const GRID_COLS = 4;
+const GRID_ROWS = 3;
+const CARD_W = 5.5;
+const CARD_H = 4.0;
+const CARD_GAP_X = 6.5;
+const CARD_GAP_Y = 7.2;
+
+function getGroupPosition(index) {
+  const col = index % GRID_COLS;
+  const row = Math.floor(index / GRID_COLS);
+  const x = (col - (GRID_COLS - 1) / 2) * CARD_GAP_X;
+  const y = ((GRID_ROWS - 1) / 2 - row) * CARD_GAP_Y;
+  return new THREE.Vector3(x, y, 0);
+}
+
+function createTextSprite(text, fontSize, color, bgColor) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 512;
+  canvas.height = 128;
+  
+  if (bgColor) {
+    ctx.fillStyle = bgColor;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 512, 128, 12);
+    ctx.fill();
+  }
+  
+  ctx.font = `bold ${fontSize}px Orbitron, sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 256, 64);
+  
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(3, 0.75, 1);
+  return sprite;
+}
+
+function createCardMesh(groupKey, groupData) {
+  const container = new THREE.Group();
+  const pos = getGroupPosition(GROUP_LETTERS.indexOf(groupKey));
+  container.position.copy(pos);
+  
+  // Card background (glass effect)
+  const cardGeo = new THREE.PlaneGeometry(CARD_W, CARD_H);
+  const cardMat = new THREE.MeshPhysicalMaterial({
+    color: 0x0a0a2e,
+    transparent: true,
+    opacity: 0.75,
+    roughness: 0.1,
+    metalness: 0.3,
+    side: THREE.DoubleSide
+  });
+  const cardMesh = new THREE.Mesh(cardGeo, cardMat);
+  cardMesh.userData = { type: 'card', group: groupKey };
+  container.add(cardMesh);
+  
+  // Border glow
+  const borderGeo = new THREE.EdgesGeometry(cardGeo);
+  const borderMat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.4 });
+  const borderMesh = new THREE.LineSegments(borderGeo, borderMat);
+  container.add(borderMesh);
+  
+  // Group title
+  const titleSprite = createTextSprite(`${groupKey}`, 48, '#ffd700');
+  titleSprite.position.set(0, CARD_H / 2 - 0.5, 0.1);
+  titleSprite.scale.set(7.0, 1.6, 1);
+  container.add(titleSprite);
+  
+  // Jornada badge
+  const jornadaText = `Jornada ${groupData.jornadaActual}/${groupData.totalJornadas}`;
+  const jornadaSprite = createTextSprite(jornadaText, 32, '#88aacc');
+  jornadaSprite.position.set(0, CARD_H / 2 - 1.0, 0.1);
+  jornadaSprite.scale.set(2, 0.4, 1);
+  container.add(jornadaSprite);
+  
+  // Flags (2x2 grid)
+  const flagMeshes = [];
+  const flagSize = 1.2;
+  const flagGap = 1.5;
+  const startX = -flagGap / 2;
+  const startY = 0.4;
+  
+  groupData.equipos.forEach((eq, idx) => {
+    const col = idx % 2;
+    const row = Math.floor(idx / 2);
+    const fx = startX + col * flagGap;
+    const fy = startY - row * 1.6;
+    
+    const flagGeo = new THREE.PlaneGeometry(flagSize, flagSize * 0.67);
+    
+    // Load flag texture
+    const loader = new THREE.TextureLoader();
+    const flagUrl = getFlagUrl(eq.iso2);
+    const flagMat = new THREE.MeshBasicMaterial({ 
+      color: 0x333355, 
+      side: THREE.DoubleSide,
+      transparent: true 
+    });
+    
+    const flagMesh = new THREE.Mesh(flagGeo, flagMat);
+    flagMesh.position.set(fx, fy, 0.15);
+    flagMesh.userData = { 
+      type: 'flag', 
+      group: groupKey, 
+      teamIndex: idx, 
+      country: eq.pais, 
+      iso2: eq.iso2,
+      stats: eq.stats,
+      partidos: eq.partidos
+    };
+    
+    // Load texture asynchronously
+    loader.load(flagUrl, 
+      (tex) => {
+        flagMesh.material.map = tex;
+        flagMesh.material.color.set(0xffffff);
+        flagMesh.material.needsUpdate = true;
+      },
+      undefined,
+      () => {
+        // Fallback: colored rectangle
+        flagMesh.material.color.set(getFallbackColor(eq.iso2));
+      }
+    );
+    
+    container.add(flagMesh);
+    flagMeshes.push(flagMesh);
+    
+    // Country name below flag
+    const nameSprite = createTextSprite(eq.pais, 28, '#cccccc');
+    nameSprite.position.set(fx, fy - 0.6, 0.15);
+    nameSprite.scale.set(1.4, 0.3, 1);
+    container.add(nameSprite);
+    
+    // Points badge
+    const ptsText = `${eq.stats.pts} pts`;
+    const ptsColor = eq.stats.pts >= 6 ? '#4caf50' : eq.stats.pts >= 3 ? '#ffc107' : '#f44336';
+    const ptsSprite = createTextSprite(ptsText, 24, ptsColor);
+    ptsSprite.position.set(fx, fy - 0.9, 0.15);
+    ptsSprite.scale.set(1.0, 0.25, 1);
+    container.add(ptsSprite);
+  });
+  
+  scene.add(container);
+  
+  groupMeshes[groupKey] = {
+    container,
+    cardMesh,
+    borderMesh,
+    flagMeshes,
+    titleSprite,
+    groupData
+  };
+  
+  return container;
+}
+
+function getFallbackColor(iso2) {
+  const colors = {
+    mx:0x006847, za:0x007749, kr:0x003478, cz:0x11457e,
+    ca:0xff0000, ba:0x002f6c, qa:0x8d1b3d, ch:0xff0000,
+    br:0x009739, ma:0xc1272d, 'gb-sct':0x003078, ht:0x00209f,
+    us:0x3c3b6e, py:0xd52b1e, au:0x00008b, tr:0xe30a17,
+    de:0xffcc00, cw:0x003580, ci:0xf77f00, ec:0xffd100,
+    nl:0xff6600, jp:0xbc002d, se:0x006aa7, tn:0xe70013,
+    eg:0xce1126, ir:0x009b3a, be:0x000000, nz:0x00247d,
+    es:0xaa151b, uy:0x0038a8, cv:0x003893, sa:0x006c35,
+    fr:0x002395, no:0xba0c2f, sn:0x00853f, iq:0x007a33,
+    ar:0x75aadb, at:0xed2939, dz:0x006233, jo:0x007a33,
+    co:0xfcd116, pt:0x006600, cd:0x007fff, uz:0x0099b5,
+    'gb-eng':0xcf081f, gh:0x006b3f, hr:0xff0000, pa:0x003580
+  };
+  return colors[iso2] || 0x444466;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SECCIÓN 5: SISTEMA DE LÍDERES
+// ═══════════════════════════════════════════════════════════
+
+function createLeaderBadge(groupKey, groupData) {
+  const group = groupMeshes[groupKey];
+  if (!group) return;
+  
+  const lider = groupData.lider;
+  const container = group.container;
+  
+  if (lider.tipo === 'unico') {
+    // Golden glow leader flag floating above card
+    const leaderName = lider.equipos[0];
+    const leaderEq = groupData.equipos.find(e => e.pais === leaderName);
+    if (!leaderEq) return;
+    
+    const leaderGroup = new THREE.Group();
+    leaderGroup.position.set(0, CARD_H / 2 + 1.2, 0.3);
+    
+    // Larger flag
+    const flagGeo = new THREE.PlaneGeometry(1.8, 1.2);
+    const loader = new THREE.TextureLoader();
+    const flagMat = new THREE.MeshBasicMaterial({ color: 0x333355, side: THREE.DoubleSide, transparent: true });
+    const leaderFlag = new THREE.Mesh(flagGeo, flagMat);
+    
+    loader.load(getFlagUrl(leaderEq.iso2),
+      (tex) => { leaderFlag.material.map = tex; leaderFlag.material.color.set(0xffffff); leaderFlag.material.needsUpdate = true; },
+      undefined,
+      () => { leaderFlag.material.color.set(getFallbackColor(leaderEq.iso2)); }
+    );
+    
+    leaderGroup.add(leaderFlag);
+    
+    // Golden halo glow
+    const glowGeo = new THREE.PlaneGeometry(2.5, 1.8);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: 0xffd700,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending
+    });
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.position.z = -0.1;
+    leaderGroup.add(glowMesh);
+    
+    // Star/crown sprite
+    const starSprite = createTextSprite('⭐', 48, '#ffd700');
+    starSprite.position.set(0, 1.0, 0.1);
+    starSprite.scale.set(0.6, 0.6, 1);
+    leaderGroup.add(starSprite);
+    
+    // "LÍDER" badge
+    const badgeSprite = createTextSprite('LÍDER', 28, '#ffd700', 'rgba(0,0,0,0.6)');
+    badgeSprite.position.set(0, -0.9, 0.1);
+    badgeSprite.scale.set(1.2, 0.3, 1);
+    leaderGroup.add(badgeSprite);
+
+    // Points and PJ info to the right of leader flag
+    // Canvas cuadrado para que no se estire el texto
+    const ptsCanvas = document.createElement('canvas');
+    ptsCanvas.width = 256; ptsCanvas.height = 256;
+    const ptsCtx = ptsCanvas.getContext('2d');
+    ptsCtx.clearRect(0, 0, 256, 256);
+    ptsCtx.font = '400 100px Gadugi, sans-serif';
+    ptsCtx.textAlign = 'center';
+    ptsCtx.textBaseline = 'middle';
+    ptsCtx.strokeStyle = '#000';
+    ptsCtx.lineWidth = 6;
+    ptsCtx.strokeText(`${leaderEq.stats.pts}`, 128, 128);
+    ptsCtx.fillStyle = '#ffd700';
+    ptsCtx.fillText(`${leaderEq.stats.pts}`, 128, 128);
+    const ptsTex = new THREE.CanvasTexture(ptsCanvas);
+    ptsTex.needsUpdate = true;
+    const ptsInfoSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: ptsTex, transparent: true }));
+    ptsInfoSprite.position.set(1.8, 0.3, 0.1);
+    ptsInfoSprite.scale.set(1.2, 1.2, 1);
+    leaderGroup.add(ptsInfoSprite);
+
+    // PJ con canvas cuadrado
+    const pjCanvas = document.createElement('canvas');
+    pjCanvas.width = 256; pjCanvas.height = 256;
+    const pjCtx = pjCanvas.getContext('2d');
+    pjCtx.clearRect(0, 0, 256, 256);
+    pjCtx.font = '400 60px Gadugi, sans-serif';
+    pjCtx.textAlign = 'center';
+    pjCtx.textBaseline = 'middle';
+    pjCtx.fillStyle = '#cccccc';
+    pjCtx.fillText(`PJ: ${leaderEq.stats.pj}`, 128, 128);
+    const pjTex = new THREE.CanvasTexture(pjCanvas);
+    pjTex.needsUpdate = true;
+    const pjInfoSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: pjTex, transparent: true }));
+    pjInfoSprite.position.set(1.8, -0.5, 0.1);
+    pjInfoSprite.scale.set(3.6, 1.8, 1);
+    leaderGroup.add(pjInfoSprite);
+    
+    // Leader flag also interactive
+    leaderFlag.userData = {
+      type: 'flag',
+      group: groupKey,
+      teamIndex: groupData.equipos.indexOf(leaderEq),
+      country: leaderEq.pais,
+      iso2: leaderEq.iso2,
+      stats: leaderEq.stats,
+      partidos: leaderEq.partidos,
+      isLeader: true
+    };
+    
+    group.leaderMesh = leaderFlag;
+    group.glowMesh = glowMesh;
+    
+    container.add(leaderGroup);
+    group.leaderGroup = leaderGroup;
+    
+  } else if (lider.tipo === 'empate') {
+    // Silver/blue glow for tied teams
+    const tiedEquipos = lider.equipos.map(name => groupData.equipos.find(e => e.pais === name)).filter(Boolean);
+    const tieGroup = new THREE.Group();
+    tieGroup.position.set(0, CARD_H / 2 + 1.0, 0.3);
+    
+    tiedEquipos.forEach((eq, idx) => {
+      const offsetX = (idx - (tiedEquipos.length - 1) / 2) * 1.6;
+      
+      const flagGeo = new THREE.PlaneGeometry(1.3, 0.87);
+      const loader = new THREE.TextureLoader();
+      const flagMat = new THREE.MeshBasicMaterial({ color: 0x333355, side: THREE.DoubleSide, transparent: true });
+      const flagMesh = new THREE.Mesh(flagGeo, flagMat);
+      flagMesh.position.set(offsetX, 0, 0);
+      
+      loader.load(getFlagUrl(eq.iso2),
+        (tex) => { flagMesh.material.map = tex; flagMesh.material.color.set(0xffffff); flagMesh.material.needsUpdate = true; },
+        undefined,
+        () => { flagMesh.material.color.set(getFallbackColor(eq.iso2)); }
+      );
+      
+      flagMesh.userData = {
+        type: 'flag', group: groupKey,
+        teamIndex: groupData.equipos.indexOf(eq),
+        country: eq.pais, iso2: eq.iso2,
+        stats: eq.stats, partidos: eq.partidos,
+        isLeader: true
+      };
+      
+      tieGroup.add(flagMesh);
+      
+      // Blue glow
+      const glowGeo = new THREE.PlaneGeometry(1.8, 1.3);
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: 0x64b5f6, transparent: true, opacity: 0.12,
+        side: THREE.DoubleSide, blending: THREE.AdditiveBlending
+      });
+      const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+      glowMesh.position.set(offsetX, 0, -0.1);
+      tieGroup.add(glowMesh);
+    });
+    
+    // "EMPATE" badge
+    const badgeSprite = createTextSprite('⚖️ EMPATE', 26, '#64b5f6', 'rgba(0,0,0,0.6)');
+    badgeSprite.position.set(0, -0.8, 0.1);
+    badgeSprite.scale.set(1.4, 0.3, 1);
+    tieGroup.add(badgeSprite);
+    
+    container.add(tieGroup);
+    group.leaderGroup = tieGroup;
+    group.glowMeshes = tieGroup.children.filter(c => c.material && c.material.blending === THREE.AdditiveBlending);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SECCIÓN 6: INTERACTIVIDAD Y RAYCASTING
+// ═══════════════════════════════════════════════════════════
+
+function onMouseMove(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  
+  raycaster.setFromCamera(mouse, camera);
+  
+  // Collect all flag meshes
+  const allFlags = [];
+  Object.values(groupMeshes).forEach(g => {
+    g.flagMeshes.forEach(f => allFlags.push(f));
+    if (g.leaderMesh) allFlags.push(g.leaderMesh);
+    if (g.leaderGroup) {
+      g.leaderGroup.children.forEach(c => {
+        if (c.userData && c.userData.type === 'flag') allFlags.push(c);
+      });
+    }
+  });
+  
+  const intersects = raycaster.intersectObjects(allFlags);
+  
+  if (intersects.length > 0) {
+    const flag = intersects[0].object;
+    if (hoveredFlag !== flag) {
+      // Unhover previous
+      if (hoveredFlag) unhoverFlag(hoveredFlag);
+      hoveredFlag = flag;
+      hoverFlag(flag, event.clientX, event.clientY);
+    } else {
+      // Update panel position
+      updatePanelPosition(event.clientX, event.clientY);
+    }
+    renderer.domElement.style.cursor = 'pointer';
+  } else {
+    if (hoveredFlag) {
+      unhoverFlag(hoveredFlag);
+      hoveredFlag = null;
+      hidePanel();
+    }
+    renderer.domElement.style.cursor = 'grab';
+  }
+}
+
+function hoverFlag(mesh, mx, my) {
+  // Scale up with simple lerp (we'll animate in the loop)
+  mesh.userData._hoverScale = 1.2;
+  showPanel(mesh.userData, mx, my);
+}
+
+function unhoverFlag(mesh) {
+  mesh.userData._hoverScale = 1.0;
+}
+
+function showPanel(data, mx, my) {
+  const panel = document.getElementById('hover-panel');
+  const flag = document.getElementById('hp-flag');
+  const country = document.getElementById('hp-country');
+  const group = document.getElementById('hp-group');
+  const stats = document.getElementById('hp-stats');
+  const matches = document.getElementById('hp-matches');
+  
+  const flagUrl = getFlagUrl(data.iso2);
+  flag.src = flagUrl;
+  flag.onerror = () => { flag.style.display = 'none'; };
+  flag.onload = () => { flag.style.display = 'inline'; };
+  
+  country.textContent = data.country;
+  group.textContent = `Grupo ${data.group} — Posición: #${data.stats.pos}`;
+  
+  // Stats table
+  const s = data.stats;
+  stats.innerHTML = `
+    <table>
+      <tr><td class="stat-label">Partidos Jugados:</td><td class="stat-value">${s.pj}</td></tr>
+      <tr><td class="stat-label">Ganados:</td><td class="stat-value" style="color:#4caf50">${s.g}</td></tr>
+      <tr><td class="stat-label">Empatados:</td><td class="stat-value" style="color:#ffc107">${s.e}</td></tr>
+      <tr><td class="stat-label">Perdidos:</td><td class="stat-value" style="color:#f44336">${s.p}</td></tr>
+      <tr><td class="stat-label">Goles a Favor:</td><td class="stat-value">${s.gf}</td></tr>
+      <tr><td class="stat-label">Goles en Contra:</td><td class="stat-value">${s.gc}</td></tr>
+      <tr><td class="stat-label">Diferencia:</td><td class="stat-value">${s.dg}</td></tr>
+      <tr><td class="stat-label" style="color:#ffd700">Puntos:</td><td class="stat-value" style="color:#ffd700;font-size:1rem">${s.pts}</td></tr>
+    </table>`;
+  
+  // Matches
+  let matchHtml = '';
+  data.partidos.forEach(p => {
+    if (p.estado === 'pendiente' || p.gf === null) {
+      matchHtml += `<div class="hp-pending">⏳ vs ${COUNTRY_NAMES[p.rival] || p.rival} — 📅 ${p.fecha} | 📍 ${p.ciudad}</div>`;
+    } else {
+      const resClass = p.res === 'V' ? 'result-v' : p.res === 'E' ? 'result-e' : 'result-d';
+      const resLabel = p.res === 'V' ? 'Victoria' : p.res === 'E' ? 'Empate' : 'Derrota';
+      matchHtml += `
+        <div class="hp-match">
+          <span class="${resClass}">[${p.res}]</span>
+          <span>vs ${COUNTRY_NAMES[p.rival] || p.rival}</span>
+          <span style="color:#fff;font-weight:600">${p.gf}-${p.gc}</span>
+        </div>
+        <div class="match-detail">📅 ${p.fecha} | 📍 ${p.ciudad} | 🏟️ ${p.estadio}</div>`;
+    }
+  });
+  matches.innerHTML = matchHtml;
+  
+  panel.style.display = 'block';
+  updatePanelPosition(mx, my);
+}
+
+function updatePanelPosition(mx, my) {
+  const panel = document.getElementById('hover-panel');
+  const pw = panel.offsetWidth;
+  const ph = panel.offsetHeight;
+  let x = mx + 20;
+  let y = my - 20;
+  if (x + pw > window.innerWidth - 10) x = mx - pw - 20;
+  if (y + ph > window.innerHeight - 10) y = window.innerHeight - ph - 10;
+  if (y < 10) y = 10;
+  panel.style.left = x + 'px';
+  panel.style.top = y + 'px';
+}
+
+function hidePanel() {
+  document.getElementById('hover-panel').style.display = 'none';
+}
+
+function onMouseClick(event) {
+  // If clicking on a group card, zoom to it
+  raycaster.setFromCamera(mouse, camera);
+  const cards = Object.values(groupMeshes).map(g => g.cardMesh);
+  const intersects = raycaster.intersectObjects(cards);
+  if (intersects.length > 0) {
+    const groupKey = intersects[0].object.userData.group;
+    zoomToGroup(groupKey);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SECCIÓN 7: UI CONTROLES
+// ═══════════════════════════════════════════════════════════
+
+function setupUI() {
+  const btnContainer = document.getElementById('group-btns');
+  GROUP_LETTERS.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'ctrl-btn';
+    btn.textContent = g;
+    btn.style.padding = '4px 8px';
+    btn.style.textAlign = 'center';
+    btn.onclick = () => zoomToGroup(g);
+    btnContainer.appendChild(btn);
+  });
+}
+
+function zoomToGroup(groupKey) {
+  const group = groupMeshes[groupKey];
+  if (!group) return;
+  
+  const oc = window._orbitControls;
+  const targetPos = group.container.position.clone();
+  
+  // Animate to group
+  const startTarget = oc.target.clone();
+  const startTheta = oc.spherical.theta;
+  const startPhi = oc.spherical.phi;
+  const startRadius = oc.spherical.radius;
+  
+  const duration = 1500;
+  const startTime = Date.now();
+  
+  function animateCamera() {
+    const elapsed = Date.now() - startTime;
+    const t = Math.min(1, elapsed / duration);
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // ease in-out
+    
+    oc.target.lerpVectors(startTarget, targetPos, ease);
+    oc.spherical.radius = startRadius + (12 - startRadius) * ease;
+    oc.updateCamera();
+    
+    if (t < 1) requestAnimationFrame(animateCamera);
+  }
+  animateCamera();
+}
+
+function resetCamera() {
+  const oc = window._orbitControls;
+  const startTarget = oc.target.clone();
+  const startRadius = oc.spherical.radius;
+  const zeroTarget = new THREE.Vector3(0, 0, 0);
+  
+  const duration = 1200;
+  const startTime = Date.now();
+  
+  function animateCamera() {
+    const elapsed = Date.now() - startTime;
+    const t = Math.min(1, elapsed / duration);
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    
+    oc.target.lerpVectors(startTarget, zeroTarget, ease);
+    const resetRadius = window.innerWidth <= 768 ? 50 : 30;
+    oc.spherical.radius = startRadius + (resetRadius - startRadius) * ease;
+    oc.updateCamera();
+    
+    if (t < 1) requestAnimationFrame(animateCamera);
+  }
+  animateCamera();
+}
+
+function toggleLideres() {
+  lideresOnly = !lideresOnly;
+  const btn = document.getElementById('btn-lideres');
+  btn.classList.toggle('active', lideresOnly);
+  
+  Object.entries(groupMeshes).forEach(([key, g]) => {
+    const opacity = lideresOnly ? 0.3 : 1.0;
+    g.flagMeshes.forEach(f => {
+      f.material.transparent = true;
+      f.material.opacity = opacity;
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// SECCIÓN 8: ANIMATION LOOP
+// ═══════════════════════════════════════════════════════════
+
+let time = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  
+  const delta = clock.getDelta();
+  time += delta;
+  
+  // Rotate stars slowly
+  if (starField) {
+    starField.rotation.y += delta * 0.01;
+    starField.rotation.x += delta * 0.005;
+  }
+  
+  // Animate groups
+  Object.entries(groupMeshes).forEach(([key, g]) => {
+    // Gentle float for the whole card
+    g.container.position.y += Math.sin(time * 0.5 + GROUP_LETTERS.indexOf(key) * 0.7) * 0.001;
+    
+    // Leader glow pulsing
+    if (g.glowMesh) {
+      g.glowMesh.material.opacity = 0.1 + Math.sin(time * 2) * 0.08;
+    }
+    if (g.glowMeshes) {
+      g.glowMeshes.forEach((gm, i) => {
+        gm.material.opacity = 0.08 + Math.sin(time * 2 + i * 0.5) * 0.06;
+      });
+    }
+    
+    // Leader floating animation
+    if (g.leaderGroup) {
+      g.leaderGroup.position.y = (CARD_H / 2 + 1.0) + Math.sin(time * 1.5 + GROUP_LETTERS.indexOf(key)) * 0.15;
+    }
+    
+    // Leader flag slow rotation
+    if (g.leaderMesh) {
+      g.leaderMesh.rotation.y = Math.sin(time * 0.3) * 0.2;
+    }
+    
+    // Hover scale animation for flags
+    g.flagMeshes.forEach(f => {
+      const targetScale = f.userData._hoverScale || 1.0;
+      const currentScale = f.scale.x;
+      const newScale = currentScale + (targetScale - currentScale) * 0.15;
+      f.scale.set(newScale, newScale, newScale);
+    });
+    
+    // LeaderGroup children hover
+    if (g.leaderGroup) {
+      g.leaderGroup.children.forEach(c => {
+        if (c.userData && c.userData.type === 'flag') {
+          const targetScale = c.userData._hoverScale || 1.0;
+          const currentScale = c.scale.x;
+          const newScale = currentScale + (targetScale - currentScale) * 0.15;
+          c.scale.set(newScale, newScale, newScale);
+        }
+      });
+    }
+    
+    // Border glow pulsing
+    if (g.borderMesh) {
+      g.borderMesh.material.opacity = 0.3 + Math.sin(time + GROUP_LETTERS.indexOf(key)) * 0.15;
+    }
+  });
+  
+  renderer.render(scene, camera);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SECCIÓN 9: INICIALIZACIÓN
+// ═══════════════════════════════════════════════════════════
+
+async function main() {
+  updateLoading(10, loadingMessages[0]);
+  
+  await new Promise(r => setTimeout(r, 500));
+  
+  updateLoading(30, loadingMessages[1]);
+  await new Promise(r => setTimeout(r, 400));
+  
+  updateLoading(50, loadingMessages[2]);
+  await new Promise(r => setTimeout(r, 400));
+  
+  // Init Three.js
+  updateLoading(70, loadingMessages[3]);
+  initThreeJS();
+  
+  await new Promise(r => setTimeout(r, 300));
+  
+  // Create all groups
+  GROUP_LETTERS.forEach((gKey, idx) => {
+    const groupData = MUNDIAL_2026.grupos[gKey];
+    createCardMesh(gKey, groupData);
+    createLeaderBadge(gKey, groupData);
+    updateLoading(70 + (idx / GROUP_LETTERS.length) * 25, `Creando Grupo ${gKey}...`);
+  });
+  
+  // Setup UI
+  setupUI();
+  
+  updateLoading(100, loadingMessages[4]);
+  await new Promise(r => setTimeout(r, 800));
+  
+  hideLoading();
+  
+  // Start animation
+  animate();
+}
+
+main();
+</script>
+</body>
+</html>
