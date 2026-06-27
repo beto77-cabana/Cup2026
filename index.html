@@ -299,13 +299,18 @@ canvas { display:block; }
 /* RESPONSIVE PANEL FECHA */
 @media (max-width: 768px) {
   #schedule-panel {
-    top:auto; bottom:80px; right:10px; left:10px;
-    width:auto; max-height:40vh;
+    top:auto; bottom:10px; right:10px; left:10px;
+    width:auto; max-height:35vh;
+    transition:transform 0.3s, opacity 0.3s;
+  }
+  #schedule-panel.hidden-panel {
+    transform:translateY(120%); opacity:0; pointer-events:none;
   }
 }
 @media (max-width: 480px) {
   #schedule-panel {
-    bottom:70px; right:5px; left:5px; padding:10px;
+    bottom:8px; right:5px; left:5px; padding:10px;
+    max-height:30vh;
   }
   .schedule-title { font-size:0.85rem; }
   .schedule-date { font-size:0.7rem; }
@@ -368,10 +373,14 @@ canvas { display:block; }
     <div class="hp-matches" id="hp-matches"></div>
   </div>
   <div id="schedule-panel">
-    <div class="schedule-title">📅 PRÓXIMA FECHA</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="schedule-title">📅 PRÓXIMA FECHA</div>
+      <button id="schedule-toggle" onclick="toggleSchedule()" style="background:none;border:none;color:#ffd700;font-size:1.2rem;cursor:pointer;padding:0 4px;">✕</button>
+    </div>
     <div class="schedule-date" id="schedule-date"></div>
     <div id="schedule-matches"></div>
   </div>
+  <button id="schedule-show-btn" onclick="toggleSchedule()" style="display:none;position:fixed;bottom:10px;right:10px;z-index:101;background:rgba(10,10,30,0.9);border:1px solid rgba(255,215,0,0.3);color:#ffd700;border-radius:8px;padding:8px 12px;font-size:0.75rem;cursor:pointer;backdrop-filter:blur(10px);">📅 Ver partidos</button>
 </div>
 
 <script>
@@ -1584,6 +1593,21 @@ function setupUI() {
 }
 
 // ═══ PANEL DE PRÓXIMA FECHA ═══
+let scheduleVisible = true;
+
+function toggleSchedule() {
+  const panel = document.getElementById('schedule-panel');
+  const showBtn = document.getElementById('schedule-show-btn');
+  scheduleVisible = !scheduleVisible;
+  if (scheduleVisible) {
+    panel.classList.remove('hidden-panel');
+    showBtn.style.display = 'none';
+  } else {
+    panel.classList.add('hidden-panel');
+    if (window.innerWidth <= 768) showBtn.style.display = 'block';
+  }
+}
+
 function renderSchedulePanel() {
   // Datos de partidos pendientes (hora Argentina UTC-3)
   const pendingMatches = [
@@ -1838,6 +1862,12 @@ async function main() {
   
   // Renderizar panel de próxima fecha
   renderSchedulePanel();
+  // Ocultar panel en móvil por defecto
+  if (window.innerWidth <= 768) {
+    document.getElementById('schedule-panel').classList.add('hidden-panel');
+    document.getElementById('schedule-show-btn').style.display = 'block';
+    scheduleVisible = false;
+  }
   
   // Start animation
   animate();
