@@ -95,6 +95,7 @@ canvas { display:block; }
   text-align:center; font-size:1.3rem; color:#ffffff;
   margin-bottom:4px; letter-spacing:1px;
 }
+.group-label-break { display:none; }
 
 /* BUSCADOR */
 #search-container {
@@ -199,11 +200,12 @@ canvas { display:block; }
     background:rgba(0,0,0,0.7); border-radius:8px;
     padding:6px;
   }
-  #btn-vista-general { margin-bottom:0; font-size:1.4rem; padding:5px 10px; }
+  #btn-vista-general { margin-bottom:0; font-size:1.4rem !important; padding:5px 10px; }
   #controls .ctrl-btn { font-size:0.65rem; padding:4px 8px; }
   #group-btns { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; }
   #group-btns .ctrl-btn { padding:4px 7px; font-size:0.7rem; min-width:28px; text-align:center; }
   .group-label { font-size:1.1rem; }
+  .group-label-break { display:block; }
 
   #legend {
     display:none;
@@ -233,7 +235,7 @@ canvas { display:block; }
   #data-badge { font-size:0.5rem; padding:3px 6px; }
 
   #controls { bottom:8px; left:5px; right:5px; padding:4px; gap:3px; }
-  #btn-vista-general { font-size:1.2rem; padding:4px 8px; }
+  #btn-vista-general { font-size:1.2rem !important; padding:4px 8px; }
   #controls .ctrl-btn { font-size:0.6rem; padding:3px 6px; }
   #group-btns .ctrl-btn { min-width:24px; font-size:0.6rem; padding:3px 5px; }
   .group-label { font-size:1.0rem; }
@@ -279,7 +281,7 @@ canvas { display:block; }
       <input type="text" id="search-input" placeholder="🔍 Buscar equipo..." autocomplete="off">
       <div id="autocomplete-list"></div>
     </div>
-    <div class="group-label">HAGA CLICK EN UN GRUPO</div>
+    <div class="group-label">HAGA CLICK <span class="group-label-break"> </span>EN UN GRUPO</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="group-btns"></div>
     <button class="ctrl-btn" id="btn-lideres" onclick="toggleLideres()">⭐ Solo Líderes</button>
   </div>
