@@ -374,7 +374,7 @@ canvas { display:block; }
   </div>
   <div id="schedule-panel">
     <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div class="schedule-title">📅 PRÓXIMA FECHA</div>
+      <div class="schedule-title">⚽ 16AVOS DE FINAL</div>
       <button id="schedule-toggle" onclick="toggleSchedule()" style="background:none;border:none;color:#ffd700;font-size:1.2rem;cursor:pointer;padding:0 4px;">✕</button>
     </div>
     <div class="schedule-date" id="schedule-date"></div>
@@ -673,31 +673,31 @@ const MUNDIAL_2026 = {
       lider:{ tipo:"unico", equipos:["France"] }
     },
     J: {
-      nombre: "Grupo J", jornadaActual: 2, totalJornadas: 3, partidosJugados: 4,
+      nombre: "Grupo J", jornadaActual: 3, totalJornadas: 3, partidosJugados: 6,
       equipos: [
-        { pais:"Argentina", iso2:"ar", stats:{pj:2,g:2,e:0,p:0,gf:5,gc:0,dg:"+5",pts:6,pos:1},
+        { pais:"Argentina", iso2:"ar", stats:{pj:3,g:3,e:0,p:0,gf:8,gc:1,dg:"+7",pts:9,pos:1},
           partidos:[
             {jornada:1,rival:"ALG",gf:3,gc:0,res:"V",fecha:"16/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"local"},
             {jornada:2,rival:"AUT",gf:2,gc:0,res:"V",fecha:"22/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"local"},
-            {jornada:3,rival:"JOR",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"visitante",estado:"pendiente"}
+            {jornada:3,rival:"JOR",gf:3,gc:1,res:"V",fecha:"27/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"visitante"}
           ]},
-        { pais:"Austria", iso2:"at", stats:{pj:2,g:1,e:0,p:1,gf:3,gc:3,dg:"0",pts:3,pos:2},
+        { pais:"Austria", iso2:"at", stats:{pj:3,g:1,e:1,p:1,gf:6,gc:6,dg:"0",pts:4,pos:2},
           partidos:[
             {jornada:1,rival:"JOR",gf:3,gc:1,res:"V",fecha:"16/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"local"},
             {jornada:2,rival:"ARG",gf:0,gc:2,res:"D",fecha:"22/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"visitante"},
-            {jornada:3,rival:"ALG",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"visitante",estado:"pendiente"}
+            {jornada:3,rival:"ALG",gf:3,gc:3,res:"E",fecha:"27/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"visitante"}
           ]},
-        { pais:"Algeria", iso2:"dz", stats:{pj:2,g:1,e:0,p:1,gf:2,gc:4,dg:"-2",pts:3,pos:3},
+        { pais:"Algeria", iso2:"dz", stats:{pj:3,g:1,e:1,p:1,gf:5,gc:6,dg:"-1",pts:4,pos:3},
           partidos:[
             {jornada:1,rival:"ARG",gf:0,gc:3,res:"D",fecha:"16/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"visitante"},
             {jornada:2,rival:"JOR",gf:2,gc:1,res:"V",fecha:"22/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"visitante"},
-            {jornada:3,rival:"AUT",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"local",estado:"pendiente"}
+            {jornada:3,rival:"AUT",gf:3,gc:3,res:"E",fecha:"27/06/2026",ciudad:"Kansas City",estadio:"Arrowhead Stadium",cond:"local"}
           ]},
-        { pais:"Jordan", iso2:"jo", stats:{pj:2,g:0,e:0,p:2,gf:2,gc:5,dg:"-3",pts:0,pos:4},
+        { pais:"Jordan", iso2:"jo", stats:{pj:3,g:0,e:0,p:3,gf:3,gc:9,dg:"-6",pts:0,pos:4},
           partidos:[
             {jornada:1,rival:"AUT",gf:1,gc:3,res:"D",fecha:"16/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"visitante"},
             {jornada:2,rival:"ALG",gf:1,gc:2,res:"D",fecha:"22/06/2026",ciudad:"Santa Clara",estadio:"Levi's Stadium",cond:"local"},
-            {jornada:3,rival:"ARG",gf:null,gc:null,res:null,fecha:"27/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"local",estado:"pendiente"}
+            {jornada:3,rival:"ARG",gf:1,gc:3,res:"D",fecha:"27/06/2026",ciudad:"Arlington",estadio:"AT&T Stadium",cond:"local"}
           ]}
       ],
       lider:{ tipo:"unico", equipos:["Argentina"] }
@@ -1611,8 +1611,22 @@ function toggleSchedule() {
 function renderSchedulePanel() {
   // Datos de partidos pendientes (hora Argentina UTC-3)
   const pendingMatches = [
-    { fecha:"2026-06-27", grupo:"J", hora:"23:00", team1:"Algeria", iso1:"dz", team2:"Austria", iso2:"at" },
-    { fecha:"2026-06-27", grupo:"J", hora:"23:00", team1:"Jordan", iso1:"jo", team2:"Argentina", iso2:"ar" }
+    { fecha:"2026-06-28", grupo:"16avos", hora:"16:00", team1:"South Africa", iso1:"za", team2:"Canada", iso2:"ca" },
+    { fecha:"2026-06-29", grupo:"16avos", hora:"14:00", team1:"Brazil", iso1:"br", team2:"Japan", iso2:"jp" },
+    { fecha:"2026-06-29", grupo:"16avos", hora:"17:30", team1:"Germany", iso1:"de", team2:"Paraguay", iso2:"py" },
+    { fecha:"2026-06-29", grupo:"16avos", hora:"22:00", team1:"Netherlands", iso1:"nl", team2:"Morocco", iso2:"ma" },
+    { fecha:"2026-06-30", grupo:"16avos", hora:"14:00", team1:"Ivory Coast", iso1:"ci", team2:"Norway", iso2:"no" },
+    { fecha:"2026-06-30", grupo:"16avos", hora:"18:00", team1:"France", iso1:"fr", team2:"Sweden", iso2:"se" },
+    { fecha:"2026-06-30", grupo:"16avos", hora:"22:00", team1:"Mexico", iso1:"mx", team2:"Ecuador", iso2:"ec" },
+    { fecha:"2026-07-01", grupo:"16avos", hora:"13:00", team1:"England", iso1:"gb", team2:"DR Congo", iso2:"cd" },
+    { fecha:"2026-07-01", grupo:"16avos", hora:"15:00", team1:"Belgium", iso1:"be", team2:"Senegal", iso2:"sn" },
+    { fecha:"2026-07-01", grupo:"16avos", hora:"21:00", team1:"United States", iso1:"us", team2:"Bosnia Herz.", iso2:"ba" },
+    { fecha:"2026-07-02", grupo:"16avos", hora:"18:00", team1:"Spain", iso1:"es", team2:"Austria", iso2:"at" },
+    { fecha:"2026-07-02", grupo:"16avos", hora:"20:00", team1:"Portugal", iso1:"pt", team2:"Croatia", iso2:"hr" },
+    { fecha:"2026-07-02", grupo:"16avos", hora:"00:00", team1:"Switzerland", iso1:"ch", team2:"Algeria", iso2:"dz" },
+    { fecha:"2026-07-03", grupo:"16avos", hora:"15:00", team1:"Australia", iso1:"au", team2:"Egypt", iso2:"eg" },
+    { fecha:"2026-07-03", grupo:"16avos", hora:"19:00", team1:"Argentina", iso1:"ar", team2:"Cape Verde", iso2:"cv" },
+    { fecha:"2026-07-03", grupo:"16avos", hora:"22:30", team1:"Colombia", iso1:"co", team2:"Ghana", iso2:"gh" }
   ];
 
   // Encontrar la próxima fecha (la más cercana a hoy)
