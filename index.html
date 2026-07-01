@@ -393,6 +393,8 @@ canvas { display:block; }
   .bracket-team img { width:22px; height:15px; }
   .bracket-team .team-name { font-size:0.7rem; }
   .bracket-team .team-score { font-size:0.75rem; min-width:12px; }
+  .bracket-placeholder { min-width:auto; padding:4px 6px; font-size:0.7rem; }
+  .bracket-r16-slot { padding-left:8px; }
 }
 
 /* ═══ SCHEDULE PANEL ═══ */
@@ -1934,16 +1936,19 @@ function buildBracket() {
     '</div>';
   }
   
-  // 8 pares: cada par = 2 partidos R32 → 1 partido R16
+  // 8 pares R16: emparejamientos reales del bracket FIFA
+  // R16-1: W73 vs W75 | R16-2: W74 vs W77 | R16-3: W76 vs W78 | R16-4: W79 vs W80
+  // R16-5: W83 vs W84 | R16-6: W81 vs W82 | R16-7: W86 vs W88 | R16-8: W85 vs W87
+  function findMatch(num) { return matches.find(function(m) { return m.matchNum === num; }); }
   var pairs = [
-    [matches[0], matches[1]],  // M73, M76
-    [matches[2], matches[3]],  // M74, M75
-    [matches[4], matches[5]],  // M78, M77
-    [matches[6], matches[7]],  // M79, M80
-    [matches[8], matches[9]],  // M82, M81
-    [matches[10], matches[11]], // M84, M83
-    [matches[12], matches[13]], // M85, M88
-    [matches[14], matches[15]]  // M86, M87
+    [findMatch(73), findMatch(75)],  // R16-1
+    [findMatch(74), findMatch(77)],  // R16-2
+    [findMatch(76), findMatch(78)],  // R16-3
+    [findMatch(79), findMatch(80)],  // R16-4
+    [findMatch(83), findMatch(84)],  // R16-5
+    [findMatch(81), findMatch(82)],  // R16-6
+    [findMatch(86), findMatch(88)],  // R16-7
+    [findMatch(85), findMatch(87)]   // R16-8
   ];
   
   var html = '';
