@@ -248,6 +248,19 @@ canvas { display:block; }
   #hover-panel .hp-header .hp-country { font-size:0.7rem; }
 }
 
+/* KNOCKOUT MATCH CARDS */
+.knockout-container { position:relative; }
+#knockout-nav {
+  display:flex; justify-content:center; gap:10px; margin-bottom:8px;
+}
+.knockout-date-btn {
+  background:rgba(20,20,50,0.85); border:1px solid rgba(255,215,0,0.3);
+  color:#ffd700; font-family:'Rajdhani',sans-serif; font-size:0.75rem;
+  padding:5px 12px; border-radius:6px; cursor:pointer; transition:all 0.2s;
+}
+.knockout-date-btn:hover { background:rgba(255,215,0,0.2); border-color:#ffd700; }
+.knockout-date-btn.active { background:rgba(255,215,0,0.3); border-color:#ffd700; }
+
 /* PANEL DE PRÓXIMA FECHA */
 #schedule-panel {
   position:fixed; top:80px; right:15px; width:260px;
@@ -344,10 +357,11 @@ canvas { display:block; }
 <div id="ui-overlay" style="display:none;">
   <div id="top-bar">
     <div id="title-3d">⚽ LÍDERES DE CADA GRUPO</div>
-    <div id="status-badge">● FASE DE GRUPOS — EN CURSO</div>
+    <div id="status-badge">● 16AVOS DE FINAL</div>
   </div>
   <div id="controls">
     <button class="ctrl-btn" id="btn-vista-general" onclick="resetCamera()">🏠 Vista General</button>
+    <button class="ctrl-btn" id="btn-toggle-grupos" onclick="toggleGroups()">📊 Ver Grupos</button>
     <div id="search-container">
       <input type="text" id="search-input" placeholder="🔍 Buscar equipo..." autocomplete="off">
       <div id="autocomplete-list"></div>
@@ -762,6 +776,27 @@ const MUNDIAL_2026 = {
       ],
       lider:{ tipo:"unico", equipos:["England"] }
     }
+  },
+  // ═══ DATOS KNOCKOUT — 16AVOS DE FINAL ═══
+  knockout: {
+    round32: [
+      { matchNum:73, fecha:"2026-06-28", hora:"16:00", team1:{pais:"South Africa",iso2:"za",grupo:"A",pos:2}, team2:{pais:"Canada",iso2:"ca",grupo:"B",pos:2}, estadio:"SoFi Stadium", ciudad:"Inglewood" },
+      { matchNum:76, fecha:"2026-06-29", hora:"14:00", team1:{pais:"Brazil",iso2:"br",grupo:"C",pos:1}, team2:{pais:"Japan",iso2:"jp",grupo:"F",pos:2}, estadio:"NRG Stadium", ciudad:"Houston" },
+      { matchNum:74, fecha:"2026-06-29", hora:"17:30", team1:{pais:"Germany",iso2:"de",grupo:"E",pos:1}, team2:{pais:"Paraguay",iso2:"py",grupo:"D",pos:3}, estadio:"Gillette Stadium", ciudad:"Foxborough" },
+      { matchNum:75, fecha:"2026-06-29", hora:"22:00", team1:{pais:"Netherlands",iso2:"nl",grupo:"F",pos:1}, team2:{pais:"Morocco",iso2:"ma",grupo:"C",pos:2}, estadio:"Estadio BBVA", ciudad:"Guadalupe" },
+      { matchNum:78, fecha:"2026-06-30", hora:"14:00", team1:{pais:"Ivory Coast",iso2:"ci",grupo:"E",pos:2}, team2:{pais:"Norway",iso2:"no",grupo:"I",pos:2}, estadio:"AT&T Stadium", ciudad:"Arlington" },
+      { matchNum:77, fecha:"2026-06-30", hora:"18:00", team1:{pais:"France",iso2:"fr",grupo:"I",pos:1}, team2:{pais:"Sweden",iso2:"se",grupo:"F",pos:3}, estadio:"MetLife Stadium", ciudad:"East Rutherford" },
+      { matchNum:79, fecha:"2026-06-30", hora:"22:00", team1:{pais:"Mexico",iso2:"mx",grupo:"A",pos:1}, team2:{pais:"Ecuador",iso2:"ec",grupo:"E",pos:3}, estadio:"Estadio Azteca", ciudad:"Mexico City" },
+      { matchNum:80, fecha:"2026-07-01", hora:"13:00", team1:{pais:"England",iso2:"gb",grupo:"L",pos:1}, team2:{pais:"DR Congo",iso2:"cd",grupo:"K",pos:3}, estadio:"Mercedes-Benz Stadium", ciudad:"Atlanta" },
+      { matchNum:82, fecha:"2026-07-01", hora:"15:00", team1:{pais:"Belgium",iso2:"be",grupo:"G",pos:1}, team2:{pais:"Senegal",iso2:"sn",grupo:"I",pos:3}, estadio:"Lumen Field", ciudad:"Seattle" },
+      { matchNum:81, fecha:"2026-07-01", hora:"21:00", team1:{pais:"United States",iso2:"us",grupo:"D",pos:1}, team2:{pais:"Bosnia Herz.",iso2:"ba",grupo:"B",pos:3}, estadio:"Levi's Stadium", ciudad:"Santa Clara" },
+      { matchNum:84, fecha:"2026-07-02", hora:"18:00", team1:{pais:"Spain",iso2:"es",grupo:"H",pos:1}, team2:{pais:"Austria",iso2:"at",grupo:"J",pos:2}, estadio:"SoFi Stadium", ciudad:"Inglewood" },
+      { matchNum:83, fecha:"2026-07-02", hora:"20:00", team1:{pais:"Portugal",iso2:"pt",grupo:"K",pos:2}, team2:{pais:"Croatia",iso2:"hr",grupo:"L",pos:2}, estadio:"BMO Field", ciudad:"Toronto" },
+      { matchNum:85, fecha:"2026-07-03", hora:"00:00", team1:{pais:"Switzerland",iso2:"ch",grupo:"B",pos:1}, team2:{pais:"Algeria",iso2:"dz",grupo:"J",pos:3}, estadio:"BC Place", ciudad:"Vancouver" },
+      { matchNum:88, fecha:"2026-07-03", hora:"15:00", team1:{pais:"Australia",iso2:"au",grupo:"D",pos:2}, team2:{pais:"Egypt",iso2:"eg",grupo:"G",pos:2}, estadio:"AT&T Stadium", ciudad:"Arlington" },
+      { matchNum:86, fecha:"2026-07-03", hora:"19:00", team1:{pais:"Argentina",iso2:"ar",grupo:"J",pos:1}, team2:{pais:"Cape Verde",iso2:"cv",grupo:"H",pos:2}, estadio:"Hard Rock Stadium", ciudad:"Miami Gardens" },
+      { matchNum:87, fecha:"2026-07-03", hora:"22:30", team1:{pais:"Colombia",iso2:"co",grupo:"K",pos:1}, team2:{pais:"Ghana",iso2:"gh",grupo:"L",pos:3}, estadio:"Arrowhead Stadium", ciudad:"Kansas City" }
+    ]
   }
 };
 
@@ -830,6 +865,11 @@ let hoveredFlag = null;
 let hoveredGroupKey = null;
 let lideresOnly = true;
 let animationMixers = [];
+let knockoutMatchMeshes = []; // Tarjetas 3D de enfrentamientos
+let knockoutFlagMeshes = []; // Banderas knockout para raycasting
+let knockoutContainer = null; // Grupo contenedor de knockout
+let groupsVisible = false; // Grupos ocultos por defecto
+let currentKnockoutDate = null; // Fecha actual mostrada
 
 function initThreeJS() {
   scene = new THREE.Scene();
@@ -1372,7 +1412,8 @@ function onMouseMove(event) {
       });
     }
   });
-  
+  // Agregar banderas knockout
+  knockoutFlagMeshes.forEach(f => allFlags.push(f));
   const intersects = raycaster.intersectObjects(allFlags);
   
   if (intersects.length > 0) {
@@ -1421,40 +1462,88 @@ function showPanel(data, mx, my) {
   flag.onload = () => { flag.style.display = 'inline'; };
   
   country.textContent = data.country;
-  group.textContent = `Grupo ${data.group} — Posición: #${data.stats.pos}`;
   
-  // Stats table
-  const s = data.stats;
-  stats.innerHTML = `
-    <table>
-      <tr><td class="stat-label">Partidos Jugados:</td><td class="stat-value">${s.pj}</td></tr>
-      <tr><td class="stat-label">Ganados:</td><td class="stat-value" style="color:#4caf50">${s.g}</td></tr>
-      <tr><td class="stat-label">Empatados:</td><td class="stat-value" style="color:#ffc107">${s.e}</td></tr>
-      <tr><td class="stat-label">Perdidos:</td><td class="stat-value" style="color:#f44336">${s.p}</td></tr>
-      <tr><td class="stat-label">Goles a Favor:</td><td class="stat-value">${s.gf}</td></tr>
-      <tr><td class="stat-label">Goles en Contra:</td><td class="stat-value">${s.gc}</td></tr>
-      <tr><td class="stat-label">Diferencia:</td><td class="stat-value">${s.dg}</td></tr>
-      <tr><td class="stat-label" style="color:#ffd700">Puntos:</td><td class="stat-value" style="color:#ffd700;font-size:1rem">${s.pts}</td></tr>
-    </table>`;
+  // Detectar si es knockout o grupo
+  const isKnockout = data.grupo && !data.stats;
   
-  // Matches
-  let matchHtml = '';
-  data.partidos.forEach(p => {
-    if (p.estado === 'pendiente' || p.gf === null) {
-      matchHtml += `<div class="hp-pending">⏳ vs ${COUNTRY_NAMES[p.rival] || p.rival} — 📅 ${p.fecha} | 📍 ${p.ciudad}</div>`;
-    } else {
-      const resClass = p.res === 'V' ? 'result-v' : p.res === 'E' ? 'result-e' : 'result-d';
-      const resLabel = p.res === 'V' ? 'Victoria' : p.res === 'E' ? 'Empate' : 'Derrota';
-      matchHtml += `
-        <div class="hp-match">
-          <span class="${resClass}">[${p.res}]</span>
-          <span>vs ${COUNTRY_NAMES[p.rival] || p.rival}</span>
-          <span style="color:#fff;font-weight:600">${p.gf}-${p.gc}</span>
-        </div>
-        <div class="match-detail">📅 ${p.fecha} | 📍 ${p.ciudad} | 🏟️ ${p.estadio}</div>`;
+  if (isKnockout) {
+    // Panel para bandera knockout
+    group.textContent = `16avos — ${data.pos}° del Grupo ${data.grupo}`;
+    
+    // Buscar stats del equipo en los grupos
+    const grupoData = MUNDIAL_2026.grupos[data.grupo];
+    let equipoStats = null;
+    if (grupoData) {
+      equipoStats = grupoData.equipos.find(e => e.pais === data.country);
     }
-  });
-  matches.innerHTML = matchHtml;
+    
+    if (equipoStats) {
+      const s = equipoStats.stats;
+      stats.innerHTML = `
+        <table>
+          <tr><td class="stat-label">Partidos Jugados:</td><td class="stat-value">${s.pj}</td></tr>
+          <tr><td class="stat-label">Ganados:</td><td class="stat-value" style="color:#4caf50">${s.g}</td></tr>
+          <tr><td class="stat-label">Empatados:</td><td class="stat-value" style="color:#ffc107">${s.e}</td></tr>
+          <tr><td class="stat-label">Perdidos:</td><td class="stat-value" style="color:#f44336">${s.p}</td></tr>
+          <tr><td class="stat-label">Goles a Favor:</td><td class="stat-value">${s.gf}</td></tr>
+          <tr><td class="stat-label">Goles en Contra:</td><td class="stat-value">${s.gc}</td></tr>
+          <tr><td class="stat-label">Diferencia:</td><td class="stat-value">${s.dg}</td></tr>
+          <tr><td class="stat-label" style="color:#ffd700">Puntos:</td><td class="stat-value" style="color:#ffd700;font-size:1rem">${s.pts}</td></tr>
+        </table>`;
+      
+      let matchHtml = '<div style="font-size:0.7rem;color:#aaa;margin-bottom:6px;">FASE DE GRUPOS:</div>';
+      equipoStats.partidos.forEach(p => {
+        if (p.estado === 'pendiente' || p.gf === null) {
+          matchHtml += `<div class="hp-pending">⏳ vs ${COUNTRY_NAMES[p.rival] || p.rival}</div>`;
+        } else {
+          const resClass = p.res === 'V' ? 'result-v' : p.res === 'E' ? 'result-e' : 'result-d';
+          matchHtml += `
+            <div class="hp-match">
+              <span class="${resClass}">[${p.res}]</span>
+              <span>vs ${COUNTRY_NAMES[p.rival] || p.rival}</span>
+              <span style="color:#fff;font-weight:600">${p.gf}-${p.gc}</span>
+            </div>`;
+        }
+      });
+      matches.innerHTML = matchHtml;
+    } else {
+      stats.innerHTML = '<div style="color:#888;font-size:0.75rem;padding:8px 0;">Sin estadísticas disponibles</div>';
+      matches.innerHTML = '';
+    }
+  } else {
+    // Panel para bandera de grupo (original)
+    group.textContent = `Grupo ${data.group} — Posición: #${data.stats.pos}`;
+    
+    const s = data.stats;
+    stats.innerHTML = `
+      <table>
+        <tr><td class="stat-label">Partidos Jugados:</td><td class="stat-value">${s.pj}</td></tr>
+        <tr><td class="stat-label">Ganados:</td><td class="stat-value" style="color:#4caf50">${s.g}</td></tr>
+        <tr><td class="stat-label">Empatados:</td><td class="stat-value" style="color:#ffc107">${s.e}</td></tr>
+        <tr><td class="stat-label">Perdidos:</td><td class="stat-value" style="color:#f44336">${s.p}</td></tr>
+        <tr><td class="stat-label">Goles a Favor:</td><td class="stat-value">${s.gf}</td></tr>
+        <tr><td class="stat-label">Goles en Contra:</td><td class="stat-value">${s.gc}</td></tr>
+        <tr><td class="stat-label">Diferencia:</td><td class="stat-value">${s.dg}</td></tr>
+        <tr><td class="stat-label" style="color:#ffd700">Puntos:</td><td class="stat-value" style="color:#ffd700;font-size:1rem">${s.pts}</td></tr>
+      </table>`;
+    
+    let matchHtml = '';
+    data.partidos.forEach(p => {
+      if (p.estado === 'pendiente' || p.gf === null) {
+        matchHtml += `<div class="hp-pending">⏳ vs ${COUNTRY_NAMES[p.rival] || p.rival} — 📅 ${p.fecha} | 📍 ${p.ciudad}</div>`;
+      } else {
+        const resClass = p.res === 'V' ? 'result-v' : p.res === 'E' ? 'result-e' : 'result-d';
+        matchHtml += `
+          <div class="hp-match">
+            <span class="${resClass}">[${p.res}]</span>
+            <span>vs ${COUNTRY_NAMES[p.rival] || p.rival}</span>
+            <span style="color:#fff;font-weight:600">${p.gf}-${p.gc}</span>
+          </div>
+          <div class="match-detail">📅 ${p.fecha} | 📍 ${p.ciudad} | 🏟️ ${p.estadio}</div>`;
+      }
+    });
+    matches.innerHTML = matchHtml;
+  }
   
   panel.style.display = 'block';
   updatePanelPosition(mx, my);
@@ -1590,6 +1679,185 @@ function setupUI() {
       acList.style.display = 'none';
     }
   });
+}
+
+// ═══ TOGGLE GRUPOS ═══
+function toggleGroups() {
+  groupsVisible = !groupsVisible;
+  const btn = document.getElementById('btn-toggle-grupos');
+  btn.textContent = groupsVisible ? '📊 Ocultar Grupos' : '📊 Ver Grupos';
+  btn.classList.toggle('active', groupsVisible);
+  
+  // Mostrar/ocultar grupos 3D
+  Object.values(groupMeshes).forEach(function(g) {
+    g.container.visible = groupsVisible;
+  });
+  
+  // Mostrar/ocultar knockout (opuesto a grupos)
+  if (knockoutContainer) {
+    knockoutContainer.visible = !groupsVisible;
+  }
+  
+  // Mostrar/ocultar controles de grupo (botones, label, líderes)
+  var groupBtns = document.getElementById('group-btns');
+  var groupLabel = document.querySelector('.group-label');
+  var btnLideres = document.getElementById('btn-lideres');
+  var searchContainer = document.getElementById('search-container');
+  var legend = document.getElementById('legend');
+  
+  if (groupBtns) groupBtns.style.display = groupsVisible ? '' : 'none';
+  if (groupLabel) groupLabel.style.display = groupsVisible ? '' : 'none';
+  if (btnLideres) btnLideres.style.display = groupsVisible ? '' : 'none';
+  if (searchContainer) searchContainer.style.display = groupsVisible ? '' : 'none';
+  if (legend) legend.style.display = groupsVisible ? '' : 'none';
+}
+
+// ═══ CONSTRUIR ENFRENTAMIENTOS KNOCKOUT 3D ═══
+function buildKnockoutMatches() {
+  knockoutContainer = new THREE.Group();
+  scene.add(knockoutContainer);
+  
+  const matches = MUNDIAL_2026.knockout.round32;
+  
+  // Obtener fechas únicas
+  const dates = [...new Set(matches.map(m => m.fecha))].sort();
+  
+  // Determinar fecha a mostrar (hoy o próxima)
+  const now = new Date();
+  const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  currentKnockoutDate = dates.find(d => d >= todayStr) || dates[0];
+  
+  // Renderizar partidos de la fecha actual
+  renderKnockoutDate(currentKnockoutDate);
+}
+
+function renderKnockoutDate(fecha) {
+  // Limpiar tarjetas anteriores
+  knockoutMatchMeshes.forEach(m => {
+    if (m.parent) m.parent.remove(m);
+    m.traverse(function(child) {
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) {
+        if (child.material.map) child.material.map.dispose();
+        child.material.dispose();
+      }
+    });
+  });
+  knockoutMatchMeshes = [];
+  knockoutFlagMeshes = [];
+  
+  // Filtrar partidos de esta fecha
+  const matches = MUNDIAL_2026.knockout.round32.filter(m => m.fecha === fecha);
+  if (matches.length === 0) return;
+  
+  currentKnockoutDate = fecha;
+  
+  // Calcular layout
+  const cols = matches.length <= 2 ? matches.length : (matches.length <= 4 ? 2 : 3);
+  const rows = Math.ceil(matches.length / cols);
+  const cardW = 12;
+  const cardH = 6;
+  const gapX = 14;
+  const gapY = 8;
+  
+  matches.forEach((match, idx) => {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const x = (col - (cols - 1) / 2) * gapX;
+    const y = ((rows - 1) / 2 - row) * gapY - 2;
+    
+    const card = createMatchCard(match, x, y, cardW, cardH);
+    knockoutContainer.add(card);
+    knockoutMatchMeshes.push(card);
+  });
+}
+
+function createMatchCard(match, x, y, w, h) {
+  const group = new THREE.Group();
+  group.position.set(x, y, 0);
+  
+  // Tarjeta base
+  const cardGeo = new THREE.PlaneGeometry(w, h);
+  const cardMat = new THREE.MeshPhysicalMaterial({
+    color: 0x0a0a2e, transparent: true, opacity: 0.7,
+    metalness: 0.5, roughness: 0.3, side: THREE.DoubleSide,
+    emissive: 0xffd700, emissiveIntensity: 0.05
+  });
+  const card = new THREE.Mesh(cardGeo, cardMat);
+  group.add(card);
+  
+  // Borde
+  const edges = new THREE.EdgesGeometry(cardGeo);
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.5 });
+  group.add(new THREE.LineSegments(edges, lineMat));
+  
+  // Banderas
+  const flagW = 2.5;
+  const flagH = 1.67;
+  const flagLoader = new THREE.TextureLoader();
+  
+  // Equipo 1 (izquierda)
+  const f1Geo = new THREE.PlaneGeometry(flagW, flagH);
+  const f1Mat = new THREE.MeshBasicMaterial({ color: 0x333355, side: THREE.DoubleSide, transparent: true });
+  const f1 = new THREE.Mesh(f1Geo, f1Mat);
+  f1.position.set(-3, 0.8, 0.15);
+  flagLoader.load(getFlagUrl(match.team1.iso2), function(t) { f1Mat.map = t; f1Mat.color.set(0xffffff); f1Mat.needsUpdate = true; }, undefined, function() { f1Mat.color.set(getFallbackColor(match.team1.iso2)); });
+  f1.userData = { type:'flag', country:match.team1.pais, iso2:match.team1.iso2, grupo:match.team1.grupo, pos:match.team1.pos };
+  knockoutFlagMeshes.push(f1);
+  group.add(f1);
+  
+  // Equipo 2 (derecha)
+  const f2Geo = new THREE.PlaneGeometry(flagW, flagH);
+  const f2Mat = new THREE.MeshBasicMaterial({ color: 0x333355, side: THREE.DoubleSide, transparent: true });
+  const f2 = new THREE.Mesh(f2Geo, f2Mat);
+  f2.position.set(3, 0.8, 0.15);
+  flagLoader.load(getFlagUrl(match.team2.iso2), function(t) { f2Mat.map = t; f2Mat.color.set(0xffffff); f2Mat.needsUpdate = true; }, undefined, function() { f2Mat.color.set(getFallbackColor(match.team2.iso2)); });
+  f2.userData = { type:'flag', country:match.team2.pais, iso2:match.team2.iso2, grupo:match.team2.grupo, pos:match.team2.pos };
+  knockoutFlagMeshes.push(f2);
+  group.add(f2);
+  
+  // Nombres de equipos
+  const n1 = createTextSprite(match.team1.pais, 28, '#ffffff');
+  n1.position.set(-3, -0.5, 0.15);
+  n1.scale.set(2.5, 0.4, 1);
+  group.add(n1);
+  
+  const n2 = createTextSprite(match.team2.pais, 28, '#ffffff');
+  n2.position.set(3, -0.5, 0.15);
+  n2.scale.set(2.5, 0.4, 1);
+  group.add(n2);
+  
+  // VS central
+  const vsSprite = createTextSprite('VS', 48, '#ffd700');
+  vsSprite.position.set(0, 0.8, 0.2);
+  vsSprite.scale.set(1.2, 1.2, 1);
+  group.add(vsSprite);
+  
+  // Hora
+  const horaSprite = createTextSprite(match.hora + ' hs', 32, '#ffd700');
+  horaSprite.position.set(0, -0.2, 0.15);
+  horaSprite.scale.set(2, 0.4, 1);
+  group.add(horaSprite);
+  
+  // Ciudad
+  const estadioSprite = createTextSprite(match.ciudad, 22, '#888888');
+  estadioSprite.position.set(0, -1.2, 0.15);
+  estadioSprite.scale.set(3, 0.35, 1);
+  group.add(estadioSprite);
+  
+  // Estadio
+  const ciudadSprite = createTextSprite(match.estadio, 20, '#666666');
+  ciudadSprite.position.set(0, -1.7, 0.15);
+  ciudadSprite.scale.set(3.5, 0.3, 1);
+  group.add(ciudadSprite);
+  
+  // Badge
+  const badgeSprite = createTextSprite('16AVOS DE FINAL', 20, '#ffd700');
+  badgeSprite.position.set(0, h/2 - 0.4, 0.15);
+  badgeSprite.scale.set(2, 0.3, 1);
+  group.add(badgeSprite);
+  
+  return group;
 }
 
 // ═══ PANEL DE PRÓXIMA FECHA ═══
@@ -1861,7 +2129,26 @@ async function main() {
   
   hideLoading();
   
-  // Activar "Solo Líderes" por defecto
+  // Ocultar grupos por defecto (fase de grupos terminada)
+  Object.values(groupMeshes).forEach(g => {
+    g.container.visible = false;
+  });
+  // Ocultar controles de grupo por defecto
+  var groupBtns = document.getElementById('group-btns');
+  var groupLabel = document.querySelector('.group-label');
+  var btnLideres = document.getElementById('btn-lideres');
+  var searchContainer = document.getElementById('search-container');
+  var legend = document.getElementById('legend');
+  if (groupBtns) groupBtns.style.display = 'none';
+  if (groupLabel) groupLabel.style.display = 'none';
+  if (btnLideres) btnLideres.style.display = 'none';
+  if (searchContainer) searchContainer.style.display = 'none';
+  if (legend) legend.style.display = 'none';
+  
+  // Construir enfrentamientos knockout 3D
+  buildKnockoutMatches();
+  
+  // Activar "Solo Líderes" por defecto (para cuando se muestren grupos)
   document.getElementById('btn-lideres').classList.add('active');
   Object.entries(groupMeshes).forEach(([key, g]) => {
     g.flagMeshes.forEach(f => {
