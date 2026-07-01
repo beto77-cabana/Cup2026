@@ -64,6 +64,10 @@ canvas { display:block; }
   font-family:'Gadugi',sans-serif; font-size:2.2rem; color:#ffd700;
   text-shadow:0 0 10px #ffd700;
 }
+#title-bracket {
+  font-family:'Gadugi',sans-serif; font-size:2.2rem; color:#ffd700;
+  text-shadow:0 0 10px #ffd700;
+}
 #data-badge {
   font-size:0.75rem; color:#888; background:rgba(255,255,255,0.05);
   padding:4px 10px; border-radius:12px; border:1px solid rgba(255,255,255,0.1);
@@ -248,18 +252,150 @@ canvas { display:block; }
   #hover-panel .hp-header .hp-country { font-size:0.7rem; }
 }
 
-/* KNOCKOUT MATCH CARDS */
-.knockout-container { position:relative; }
-#knockout-nav {
-  display:flex; justify-content:center; gap:10px; margin-bottom:8px;
+/* ═══ BRACKET 16AVOS + 8VOS — 2 COLUMNAS ═══ */
+#bracket-overlay {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  z-index:50; display:none; overflow-y:auto; overflow-x:hidden;
 }
-.knockout-date-btn {
-  background:rgba(20,20,50,0.85); border:1px solid rgba(255,215,0,0.3);
-  color:#ffd700; font-family:'Rajdhani',sans-serif; font-size:0.75rem;
-  padding:5px 12px; border-radius:6px; cursor:pointer; transition:all 0.2s;
+#bracket-overlay.visible { display:block; }
+
+.bracket-container {
+  min-height:100vh; padding:80px 20px 40px;
+  display:flex; align-items:flex-start; justify-content:center;
 }
-.knockout-date-btn:hover { background:rgba(255,215,0,0.2); border-color:#ffd700; }
-.knockout-date-btn.active { background:rgba(255,215,0,0.3); border-color:#ffd700; }
+
+.bracket {
+  display:flex; flex-direction:column; gap:0;
+  font-family:'Rajdhani',sans-serif; color:#fff;
+  width:100%; max-width:700px;
+}
+
+/* Labels: 16VOS | 8VOS */
+.bracket-labels-row {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  padding:0 10px 8px 10px;
+  border-bottom:1px solid rgba(255,215,0,0.15);
+  margin-bottom:8px;
+}
+.bracket-labels-row .bl {
+  font-family:'Orbitron',sans-serif;
+  font-size:0.8rem; color:#ffd700;
+  letter-spacing:2px; text-transform:uppercase;
+  text-shadow:0 0 10px rgba(255,215,0,0.3);
+  padding:4px 0; text-align:center;
+}
+
+/* Cada fila: 2 columnas (16vos | 8vos) */
+.bracket-row {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  padding:6px 10px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  align-items:center;
+}
+.bracket-row:last-child { border-bottom:none; }
+
+/* Columna izquierda: 2 partidos R32 apilados */
+.bracket-r32-pair {
+  display:flex; flex-direction:column; gap:4px;
+}
+/* Columna derecha: 1 partido R16 */
+.bracket-r16-slot {
+  display:flex; flex-direction:column; gap:2px;
+  border-left:2px solid rgba(255,215,0,0.15);
+  padding-left:12px;
+}
+
+/* Cada partido */
+.bracket-match {
+  display:flex; flex-direction:column; gap:2px;
+  position:relative;
+}
+.bracket-team {
+  display:flex; align-items:center; gap:6px;
+  background:rgba(10,22,40,0.85);
+  border:1px solid rgba(255,215,0,0.3);
+  border-radius:6px; padding:5px 10px;
+  min-width:160px; transition:all 0.2s;
+  backdrop-filter:blur(5px);
+}
+.bracket-team:hover {
+  border-color:#ffd700;
+  box-shadow:0 0 10px rgba(255,215,0,0.2);
+}
+.bracket-team.winner {
+  border-color:#ffd700;
+  background:rgba(255,215,0,0.08);
+  box-shadow:0 0 8px rgba(255,215,0,0.15);
+}
+.bracket-team.loser { opacity:0.5; }
+.bracket-team.loser .team-name { text-decoration:line-through; color:#888; }
+.bracket-team.pending { border-color:rgba(255,255,255,0.1); }
+
+.bracket-team img {
+  width:28px; height:19px; border-radius:2px;
+  object-fit:cover;
+}
+.bracket-team .team-name {
+  flex:1; font-size:0.8rem; font-weight:600;
+}
+.bracket-team .team-score {
+  font-family:'Gadugi',sans-serif; font-weight:700;
+  font-size:0.85rem; color:#ffd700; min-width:16px;
+  text-align:center;
+}
+.bracket-team .team-pos {
+  font-size:0.6rem; color:#888; margin-left:2px;
+}
+.bracket-team .team-pen {
+  font-size:0.65rem; color:#ff6b6b; margin-left:3px; font-style:italic;
+}
+
+/* Líneas conectoras */
+.bracket-lines {
+  display:flex; flex-direction:column; justify-content:space-around;
+  min-height:700px; width:30px; position:relative;
+}
+.bracket-line-segment {
+  position:absolute; border-color:rgba(255,215,0,0.4);
+  border-style:solid; border-width:0;
+}
+
+/* Ronda labels */
+.bracket-round-label {
+  text-align:center; font-family:'Orbitron',sans-serif;
+  font-size:0.7rem; color:#ffd700; letter-spacing:2px;
+  margin-bottom:10px; text-transform:uppercase;
+  text-shadow:0 0 10px rgba(255,215,0,0.3);
+}
+
+/* Placeholder */
+.bracket-placeholder {
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.03);
+  border:1px dashed rgba(255,255,255,0.15);
+  border-radius:6px; padding:5px 10px;
+  font-size:0.8rem; color:#555; min-width:160px;
+  min-height:30px;
+}
+
+/* Responsive */
+@media (max-width:600px) {
+  .bracket-container { padding:70px 5px 20px; }
+  .bracket { max-width:100%; }
+  .bracket-labels-row { gap:6px; padding:0 5px 6px; }
+  .bracket-labels-row .bl { font-size:0.65rem; }
+  .bracket-row { gap:6px; padding:4px 5px; }
+  .bracket-team { min-width:auto; padding:4px 6px; gap:4px; }
+  .bracket-team img { width:22px; height:15px; }
+  .bracket-team .team-name { font-size:0.7rem; }
+  .bracket-team .team-score { font-size:0.75rem; min-width:12px; }
+}
+
+/* ═══ SCHEDULE PANEL ═══ */
 
 /* PANEL DE PRÓXIMA FECHA */
 #schedule-panel {
@@ -356,11 +492,12 @@ canvas { display:block; }
 <!-- UI OVERLAY -->
 <div id="ui-overlay" style="display:none;">
   <div id="top-bar">
-    <div id="title-3d">⚽ LÍDERES DE CADA GRUPO</div>
+    <div id="title-3d" style="display:none;">⚽ LÍDERES DE CADA GRUPO</div>
+    <div id="title-bracket">⚽ 16AVOS DE FINAL</div>
     <div id="status-badge">● 16AVOS DE FINAL</div>
   </div>
   <div id="controls">
-    <button class="ctrl-btn" id="btn-vista-general" onclick="resetCamera()">🏠 Vista General</button>
+    <button class="ctrl-btn" id="btn-vista-general" onclick="resetCamera()" style="display:none;">🏠 Vista General</button>
     <button class="ctrl-btn" id="btn-toggle-grupos" onclick="toggleGroups()">📊 Ver Grupos</button>
     <div id="search-container">
       <input type="text" id="search-input" placeholder="🔍 Buscar equipo..." autocomplete="off">
@@ -395,6 +532,15 @@ canvas { display:block; }
     <div id="schedule-matches"></div>
   </div>
   <button id="schedule-show-btn" onclick="toggleSchedule()" style="display:none;position:fixed;bottom:10px;right:10px;z-index:101;background:rgba(10,10,30,0.9);border:1px solid rgba(255,215,0,0.3);color:#ffd700;border-radius:8px;padding:8px 12px;font-size:0.75rem;cursor:pointer;backdrop-filter:blur(10px);">📅 Ver partidos</button>
+</div>
+
+<!-- BRACKET OVERLAY -->
+<div id="bracket-overlay">
+  <div class="bracket-container">
+    <div class="bracket" id="bracket-content">
+      <!-- Se genera dinámicamente por JS -->
+    </div>
+  </div>
 </div>
 
 <script>
@@ -780,13 +926,13 @@ const MUNDIAL_2026 = {
   // ═══ DATOS KNOCKOUT — 16AVOS DE FINAL ═══
   knockout: {
     round32: [
-      { matchNum:73, fecha:"2026-06-28", hora:"16:00", team1:{pais:"South Africa",iso2:"za",grupo:"A",pos:2}, team2:{pais:"Canada",iso2:"ca",grupo:"B",pos:2}, estadio:"SoFi Stadium", ciudad:"Inglewood" },
-      { matchNum:76, fecha:"2026-06-29", hora:"14:00", team1:{pais:"Brazil",iso2:"br",grupo:"C",pos:1}, team2:{pais:"Japan",iso2:"jp",grupo:"F",pos:2}, estadio:"NRG Stadium", ciudad:"Houston" },
-      { matchNum:74, fecha:"2026-06-29", hora:"17:30", team1:{pais:"Germany",iso2:"de",grupo:"E",pos:1}, team2:{pais:"Paraguay",iso2:"py",grupo:"D",pos:3}, estadio:"Gillette Stadium", ciudad:"Foxborough" },
-      { matchNum:75, fecha:"2026-06-29", hora:"22:00", team1:{pais:"Netherlands",iso2:"nl",grupo:"F",pos:1}, team2:{pais:"Morocco",iso2:"ma",grupo:"C",pos:2}, estadio:"Estadio BBVA", ciudad:"Guadalupe" },
-      { matchNum:78, fecha:"2026-06-30", hora:"14:00", team1:{pais:"Ivory Coast",iso2:"ci",grupo:"E",pos:2}, team2:{pais:"Norway",iso2:"no",grupo:"I",pos:2}, estadio:"AT&T Stadium", ciudad:"Arlington" },
-      { matchNum:77, fecha:"2026-06-30", hora:"18:00", team1:{pais:"France",iso2:"fr",grupo:"I",pos:1}, team2:{pais:"Sweden",iso2:"se",grupo:"F",pos:3}, estadio:"MetLife Stadium", ciudad:"East Rutherford" },
-      { matchNum:79, fecha:"2026-06-30", hora:"22:00", team1:{pais:"Mexico",iso2:"mx",grupo:"A",pos:1}, team2:{pais:"Ecuador",iso2:"ec",grupo:"E",pos:3}, estadio:"Estadio Azteca", ciudad:"Mexico City" },
+      { matchNum:73, fecha:"2026-06-28", hora:"16:00", team1:{pais:"South Africa",iso2:"za",grupo:"A",pos:2}, team2:{pais:"Canada",iso2:"ca",grupo:"B",pos:2}, score:[0,1], estadio:"SoFi Stadium", ciudad:"Inglewood" },
+      { matchNum:76, fecha:"2026-06-29", hora:"14:00", team1:{pais:"Brazil",iso2:"br",grupo:"C",pos:1}, team2:{pais:"Japan",iso2:"jp",grupo:"F",pos:2}, score:[2,1], estadio:"NRG Stadium", ciudad:"Houston" },
+      { matchNum:74, fecha:"2026-06-29", hora:"17:30", team1:{pais:"Germany",iso2:"de",grupo:"E",pos:1}, team2:{pais:"Paraguay",iso2:"py",grupo:"D",pos:3}, score:[1,1], penalties:[3,4], winner:2, estadio:"Gillette Stadium", ciudad:"Foxborough" },
+      { matchNum:75, fecha:"2026-06-29", hora:"22:00", team1:{pais:"Netherlands",iso2:"nl",grupo:"F",pos:1}, team2:{pais:"Morocco",iso2:"ma",grupo:"C",pos:2}, score:[1,1], penalties:[2,3], winner:2, estadio:"Estadio BBVA", ciudad:"Guadalupe" },
+      { matchNum:78, fecha:"2026-06-30", hora:"14:00", team1:{pais:"Ivory Coast",iso2:"ci",grupo:"E",pos:2}, team2:{pais:"Norway",iso2:"no",grupo:"I",pos:2}, score:[1,2], estadio:"AT&T Stadium", ciudad:"Arlington" },
+      { matchNum:77, fecha:"2026-06-30", hora:"18:00", team1:{pais:"France",iso2:"fr",grupo:"I",pos:1}, team2:{pais:"Sweden",iso2:"se",grupo:"F",pos:3}, score:[3,0], estadio:"MetLife Stadium", ciudad:"East Rutherford" },
+      { matchNum:79, fecha:"2026-06-30", hora:"22:00", team1:{pais:"Mexico",iso2:"mx",grupo:"A",pos:1}, team2:{pais:"Ecuador",iso2:"ec",grupo:"E",pos:3}, score:[2,0], estadio:"Estadio Azteca", ciudad:"Mexico City" },
       { matchNum:80, fecha:"2026-07-01", hora:"13:00", team1:{pais:"England",iso2:"gb",grupo:"L",pos:1}, team2:{pais:"DR Congo",iso2:"cd",grupo:"K",pos:3}, estadio:"Mercedes-Benz Stadium", ciudad:"Atlanta" },
       { matchNum:82, fecha:"2026-07-01", hora:"15:00", team1:{pais:"Belgium",iso2:"be",grupo:"G",pos:1}, team2:{pais:"Senegal",iso2:"sn",grupo:"I",pos:3}, estadio:"Lumen Field", ciudad:"Seattle" },
       { matchNum:81, fecha:"2026-07-01", hora:"21:00", team1:{pais:"United States",iso2:"us",grupo:"D",pos:1}, team2:{pais:"Bosnia Herz.",iso2:"ba",grupo:"B",pos:3}, estadio:"Levi's Stadium", ciudad:"Santa Clara" },
@@ -1693,9 +1839,14 @@ function toggleGroups() {
     g.container.visible = groupsVisible;
   });
   
-  // Mostrar/ocultar knockout (opuesto a grupos)
-  if (knockoutContainer) {
-    knockoutContainer.visible = !groupsVisible;
+  // Mostrar/ocultar bracket (opuesto a grupos)
+  var bracketOverlay = document.getElementById('bracket-overlay');
+  if (bracketOverlay) {
+    if (groupsVisible) {
+      bracketOverlay.classList.remove('visible');
+    } else {
+      bracketOverlay.classList.add('visible');
+    }
   }
   
   // Mostrar/ocultar controles de grupo (botones, label, líderes)
@@ -1704,160 +1855,136 @@ function toggleGroups() {
   var btnLideres = document.getElementById('btn-lideres');
   var searchContainer = document.getElementById('search-container');
   var legend = document.getElementById('legend');
+  var title3d = document.getElementById('title-3d');
+  var titleBracket = document.getElementById('title-bracket');
+  var btnVista = document.getElementById('btn-vista-general');
   
   if (groupBtns) groupBtns.style.display = groupsVisible ? '' : 'none';
   if (groupLabel) groupLabel.style.display = groupsVisible ? '' : 'none';
   if (btnLideres) btnLideres.style.display = groupsVisible ? '' : 'none';
   if (searchContainer) searchContainer.style.display = groupsVisible ? '' : 'none';
   if (legend) legend.style.display = groupsVisible ? '' : 'none';
+  // Títulos: grupos vs bracket
+  if (title3d) title3d.style.display = groupsVisible ? '' : 'none';
+  if (titleBracket) titleBracket.style.display = groupsVisible ? 'none' : '';
+  // Vista General solo cuando hay grupos visibles
+  if (btnVista) btnVista.style.display = groupsVisible ? '' : 'none';
 }
 
-// ═══ CONSTRUIR ENFRENTAMIENTOS KNOCKOUT 3D ═══
-function buildKnockoutMatches() {
-  knockoutContainer = new THREE.Group();
-  scene.add(knockoutContainer);
+// ═══ CONSTRUIR BRACKET HTML — 2 COLUMNAS (16VOS | 8VOS) ═══
+function buildBracket() {
+  var container = document.getElementById('bracket-content');
+  if (!container) return;
   
-  const matches = MUNDIAL_2026.knockout.round32;
+  var matches = MUNDIAL_2026.knockout.round32;
   
-  // Obtener fechas únicas
-  const dates = [...new Set(matches.map(m => m.fecha))].sort();
+  // Helper: obtener ganador de un partido (o null si no se jugó)
+  function getWinner(m) {
+    var kd = MUNDIAL_2026.knockout.round32.find(function(k) { return k.matchNum === m.matchNum; });
+    if (!kd || !kd.score) return null;
+    if (kd.penalties) {
+      return kd.winner === 1 ? m.team1 : m.team2;
+    }
+    if (kd.score[0] > kd.score[1]) return m.team1;
+    if (kd.score[1] > kd.score[0]) return m.team2;
+    return null;
+  }
   
-  // Determinar fecha a mostrar (hoy o próxima)
-  const now = new Date();
-  const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-  currentKnockoutDate = dates.find(d => d >= todayStr) || dates[0];
+  function teamHTML(team, score, status, penInfo) {
+    var cls = 'bracket-team ' + status;
+    var scoreHTML = score !== null ? '<span class="team-score">' + score + '</span>' : '';
+    var penHTML = penInfo || '';
+    return '<div class="' + cls + '">' +
+      '<img src="https://flagcdn.com/w40/' + team.iso2 + '.png" onerror="this.style.display=\'none\'">' +
+      '<span class="team-name">' + team.pais + '</span>' +
+      scoreHTML + penHTML +
+    '</div>';
+  }
   
-  // Renderizar partidos de la fecha actual
-  renderKnockoutDate(currentKnockoutDate);
-}
-
-function renderKnockoutDate(fecha) {
-  // Limpiar tarjetas anteriores
-  knockoutMatchMeshes.forEach(m => {
-    if (m.parent) m.parent.remove(m);
-    m.traverse(function(child) {
-      if (child.geometry) child.geometry.dispose();
-      if (child.material) {
-        if (child.material.map) child.material.map.dispose();
-        child.material.dispose();
-      }
-    });
-  });
-  knockoutMatchMeshes = [];
-  knockoutFlagMeshes = [];
-  
-  // Filtrar partidos de esta fecha
-  const matches = MUNDIAL_2026.knockout.round32.filter(m => m.fecha === fecha);
-  if (matches.length === 0) return;
-  
-  currentKnockoutDate = fecha;
-  
-  // Calcular layout
-  const cols = matches.length <= 2 ? matches.length : (matches.length <= 4 ? 2 : 3);
-  const rows = Math.ceil(matches.length / cols);
-  const cardW = 12;
-  const cardH = 6;
-  const gapX = 14;
-  const gapY = 8;
-  
-  matches.forEach((match, idx) => {
-    const col = idx % cols;
-    const row = Math.floor(idx / cols);
-    const x = (col - (cols - 1) / 2) * gapX;
-    const y = ((rows - 1) / 2 - row) * gapY - 2;
+  function matchHTML(m) {
+    var status1 = 'pending';
+    var status2 = 'pending';
+    var score1 = null;
+    var score2 = null;
+    var penInfo = '';
     
-    const card = createMatchCard(match, x, y, cardW, cardH);
-    knockoutContainer.add(card);
-    knockoutMatchMeshes.push(card);
-  });
-}
-
-function createMatchCard(match, x, y, w, h) {
-  const group = new THREE.Group();
-  group.position.set(x, y, 0);
+    var knockoutData = MUNDIAL_2026.knockout.round32.find(function(k) { return k.matchNum === m.matchNum; });
+    if (knockoutData && knockoutData.score) {
+      score1 = knockoutData.score[0];
+      score2 = knockoutData.score[1];
+      if (knockoutData.penalties) {
+        penInfo = '<span class="team-pen">(pen ' + knockoutData.penalties[0] + '-' + knockoutData.penalties[1] + ')</span>';
+        if (knockoutData.winner === 1) { status1 = 'winner'; status2 = 'loser'; }
+        else if (knockoutData.winner === 2) { status2 = 'winner'; status1 = 'loser'; }
+      } else {
+        if (score1 > score2) { status1 = 'winner'; status2 = 'loser'; }
+        else if (score2 > score1) { status2 = 'winner'; status1 = 'loser'; }
+      }
+    }
+    
+    return teamHTML(m.team1, score1, status1, penInfo) +
+           teamHTML(m.team2, score2, status2, penInfo);
+  }
   
-  // Tarjeta base
-  const cardGeo = new THREE.PlaneGeometry(w, h);
-  const cardMat = new THREE.MeshPhysicalMaterial({
-    color: 0x0a0a2e, transparent: true, opacity: 0.7,
-    metalness: 0.5, roughness: 0.3, side: THREE.DoubleSide,
-    emissive: 0xffd700, emissiveIntensity: 0.05
-  });
-  const card = new THREE.Mesh(cardGeo, cardMat);
-  group.add(card);
+  function r16TeamHTML(team) {
+    if (!team) return '<div class="bracket-placeholder">?</div>';
+    return '<div class="bracket-team pending">' +
+      '<img src="https://flagcdn.com/w40/' + team.iso2 + '.png" onerror="this.style.display=\'none\'">' +
+      '<span class="team-name">' + team.pais + '</span>' +
+    '</div>';
+  }
   
-  // Borde
-  const edges = new THREE.EdgesGeometry(cardGeo);
-  const lineMat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.5 });
-  group.add(new THREE.LineSegments(edges, lineMat));
+  // 8 pares: cada par = 2 partidos R32 → 1 partido R16
+  var pairs = [
+    [matches[0], matches[1]],  // M73, M76
+    [matches[2], matches[3]],  // M74, M75
+    [matches[4], matches[5]],  // M78, M77
+    [matches[6], matches[7]],  // M79, M80
+    [matches[8], matches[9]],  // M82, M81
+    [matches[10], matches[11]], // M84, M83
+    [matches[12], matches[13]], // M85, M88
+    [matches[14], matches[15]]  // M86, M87
+  ];
   
-  // Banderas
-  const flagW = 2.5;
-  const flagH = 1.67;
-  const flagLoader = new THREE.TextureLoader();
+  var html = '';
   
-  // Equipo 1 (izquierda)
-  const f1Geo = new THREE.PlaneGeometry(flagW, flagH);
-  const f1Mat = new THREE.MeshBasicMaterial({ color: 0x333355, side: THREE.DoubleSide, transparent: true });
-  const f1 = new THREE.Mesh(f1Geo, f1Mat);
-  f1.position.set(-3, 0.8, 0.15);
-  flagLoader.load(getFlagUrl(match.team1.iso2), function(t) { f1Mat.map = t; f1Mat.color.set(0xffffff); f1Mat.needsUpdate = true; }, undefined, function() { f1Mat.color.set(getFallbackColor(match.team1.iso2)); });
-  f1.userData = { type:'flag', country:match.team1.pais, iso2:match.team1.iso2, grupo:match.team1.grupo, pos:match.team1.pos };
-  knockoutFlagMeshes.push(f1);
-  group.add(f1);
+  // Labels
+  html += '<div class="bracket-labels-row">';
+  html += '<span class="bl">16VOS</span>';
+  html += '<span class="bl">8VOS</span>';
+  html += '</div>';
   
-  // Equipo 2 (derecha)
-  const f2Geo = new THREE.PlaneGeometry(flagW, flagH);
-  const f2Mat = new THREE.MeshBasicMaterial({ color: 0x333355, side: THREE.DoubleSide, transparent: true });
-  const f2 = new THREE.Mesh(f2Geo, f2Mat);
-  f2.position.set(3, 0.8, 0.15);
-  flagLoader.load(getFlagUrl(match.team2.iso2), function(t) { f2Mat.map = t; f2Mat.color.set(0xffffff); f2Mat.needsUpdate = true; }, undefined, function() { f2Mat.color.set(getFallbackColor(match.team2.iso2)); });
-  f2.userData = { type:'flag', country:match.team2.pais, iso2:match.team2.iso2, grupo:match.team2.grupo, pos:match.team2.pos };
-  knockoutFlagMeshes.push(f2);
-  group.add(f2);
+  // 8 filas
+  for (var i = 0; i < pairs.length; i++) {
+    var m1 = pairs[i][0];
+    var m2 = pairs[i][1];
+    var w1 = getWinner(m1);
+    var w2 = getWinner(m2);
+    
+    // Slot R16: si ambos ganadores existen, mostrar partido; si no, placeholder
+    var r16HTML = '';
+    if (w1 && w2) {
+      r16HTML = r16TeamHTML(w1) + r16TeamHTML(w2);
+    } else if (w1) {
+      r16HTML = r16TeamHTML(w1) + '<div class="bracket-placeholder">?</div>';
+    } else if (w2) {
+      r16HTML = '<div class="bracket-placeholder">?</div>' + r16TeamHTML(w2);
+    } else {
+      r16HTML = '<div class="bracket-placeholder">?</div><div class="bracket-placeholder">?</div>';
+    }
+    
+    html += '<div class="bracket-row">';
+    html += '<div class="bracket-r32-pair">';
+    html += '<div class="bracket-match">' + matchHTML(m1) + '</div>';
+    html += '<div class="bracket-match">' + matchHTML(m2) + '</div>';
+    html += '</div>';
+    html += '<div class="bracket-r16-slot">';
+    html += r16HTML;
+    html += '</div>';
+    html += '</div>';
+  }
   
-  // Nombres de equipos
-  const n1 = createTextSprite(match.team1.pais, 28, '#ffffff');
-  n1.position.set(-3, -0.5, 0.15);
-  n1.scale.set(2.5, 0.4, 1);
-  group.add(n1);
-  
-  const n2 = createTextSprite(match.team2.pais, 28, '#ffffff');
-  n2.position.set(3, -0.5, 0.15);
-  n2.scale.set(2.5, 0.4, 1);
-  group.add(n2);
-  
-  // VS central
-  const vsSprite = createTextSprite('VS', 48, '#ffd700');
-  vsSprite.position.set(0, 0.8, 0.2);
-  vsSprite.scale.set(1.2, 1.2, 1);
-  group.add(vsSprite);
-  
-  // Hora
-  const horaSprite = createTextSprite(match.hora + ' hs', 32, '#ffd700');
-  horaSprite.position.set(0, -0.2, 0.15);
-  horaSprite.scale.set(2, 0.4, 1);
-  group.add(horaSprite);
-  
-  // Ciudad
-  const estadioSprite = createTextSprite(match.ciudad, 22, '#888888');
-  estadioSprite.position.set(0, -1.2, 0.15);
-  estadioSprite.scale.set(3, 0.35, 1);
-  group.add(estadioSprite);
-  
-  // Estadio
-  const ciudadSprite = createTextSprite(match.estadio, 20, '#666666');
-  ciudadSprite.position.set(0, -1.7, 0.15);
-  ciudadSprite.scale.set(3.5, 0.3, 1);
-  group.add(ciudadSprite);
-  
-  // Badge
-  const badgeSprite = createTextSprite('16AVOS DE FINAL', 20, '#ffd700');
-  badgeSprite.position.set(0, h/2 - 0.4, 0.15);
-  badgeSprite.scale.set(2, 0.3, 1);
-  group.add(badgeSprite);
-  
-  return group;
+  container.innerHTML = html;
 }
 
 // ═══ PANEL DE PRÓXIMA FECHA ═══
@@ -2145,8 +2272,9 @@ async function main() {
   if (searchContainer) searchContainer.style.display = 'none';
   if (legend) legend.style.display = 'none';
   
-  // Construir enfrentamientos knockout 3D
-  buildKnockoutMatches();
+  // Construir bracket HTML
+  buildBracket();
+  document.getElementById('bracket-overlay').classList.add('visible');
   
   // Activar "Solo Líderes" por defecto (para cuando se muestren grupos)
   document.getElementById('btn-lideres').classList.add('active');
